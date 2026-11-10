@@ -35,12 +35,12 @@ jobs:
           -o publish
 
       - name: Install Inno Setup
-        uses: olegtarasov/get-innosetup@v2
-        with:
-          version: 6.4.2
+        shell: pwsh
+        run: choco install innosetup --no-progress --yes
 
       - name: Build monochrome installer
-        run: iscc installer/m4xmudovv.iss
+        shell: pwsh
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer/m4xmudovv.iss'
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
