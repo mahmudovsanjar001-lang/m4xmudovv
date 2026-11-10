@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+publish/
+dist/
+# Large optional wallpaper media is not part of the lightweight installer/repository.
+src/m4xmudovv/Wallpapers/Videos/*
+!src/m4xmudovv/Wallpapers/Videos/.gitkeep

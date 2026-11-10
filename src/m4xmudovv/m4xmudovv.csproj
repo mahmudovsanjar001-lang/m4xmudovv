@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <EnablePriGenTooling>false</EnablePriGenTooling>
+    <AssemblyName>m4xmudovv</AssemblyName>
+    <RootNamespace>m4xmudovv</RootNamespace>
+    <ApplicationIcon>Assets\m4xmudovv.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Windows Forms is used ONLY for the system tray icon (NotifyIcon). -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <Version>2.0.0</Version>
+    <!-- Fast start (important for "Start with Windows"): precompiled code (ReadyToRun) so nothing has to be JIT-compiled at
+         launch, self-contained so the installer works on a PC without .NET, no extra language folders. -->
+    <SelfContained>true</SelfContained>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishSingleFile>false</PublishSingleFile>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredPGO>false</TieredPGO>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF + WinForms in one project: drop the implicit global usings that would make Application, MessageBox,
+         Button, ComboBox ... ambiguous. TrayService refers to WinForms through explicit aliases instead. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\m4xmudovv-logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Optional wallpaper packs are distributed separately from the lightweight installer. -->
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Hardware-accelerated, codec-rich wallpaper playback (Lively-style native backend). -->
+    <PackageReference Include="LibVLCSharp" Version="3.9.0" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
+    <!-- Direct HWND output does not use WinUI; suppress LibVLCSharp's optional Windows App SDK build assets. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240627000" ExcludeAssets="all" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

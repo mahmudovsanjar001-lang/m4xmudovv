@@ -1,0 +1,91 @@
+<Window x:Class="m4xmudovv.Views.TrayMenuWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="False" Topmost="True" ShowActivated="True"
+        SizeToContent="WidthAndHeight" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display" Title="m4xmudovv">
+    <Window.Resources>
+        <Style x:Key="TrayItem" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Row" CornerRadius="8" Background="{TemplateBinding Background}" Padding="10,0" Height="38">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Stretch" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource PanelAltBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource PanelAltBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Row" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- The outer margin leaves room for the soft drop shadow. -->
+    <Border Margin="14" CornerRadius="14" Background="{DynamicResource PanelBrush}"
+            BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Width="236">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="22" ShadowDepth="4" Direction="270" Opacity="0.45" Color="Black" />
+        </Border.Effect>
+        <StackPanel Margin="8">
+            <!-- Header -->
+            <Grid Margin="6,6,6,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Width="34" Height="34" CornerRadius="9" Background="{DynamicResource CanvasBrush}"
+                        BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" ClipToBounds="True">
+                    <Image Margin="5" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality">
+                        <Image.Source>
+                            <BitmapImage UriSource="/Assets/m4xmudovv-logo.png" DecodePixelWidth="72" />
+                        </Image.Source>
+                    </Image>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="m4xmudovv" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryBrush}" />
+                    <TextBlock x:Name="StatusLine" Text="Live wallpapers" FontSize="11.5" Foreground="{DynamicResource MutedBrush}" />
+                </StackPanel>
+            </Grid>
+            <Border Height="1" Margin="4,0,4,6" Background="{DynamicResource DividerBrush}" />
+
+            <Button x:Name="OpenButton" Style="{StaticResource TrayItem}" Click="OpenButton_OnClick">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="28" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE8A7;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="Open m4xmudovv" FontSize="13.5" VerticalAlignment="Center" />
+                </Grid>
+            </Button>
+            <Button x:Name="SettingsButton" Style="{StaticResource TrayItem}" Click="SettingsButton_OnClick">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="28" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="Settings" FontSize="13.5" VerticalAlignment="Center" />
+                </Grid>
+            </Button>
+            <Border Height="1" Margin="4,6,4,6" Background="{DynamicResource DividerBrush}" />
+            <Button x:Name="ExitButton" Style="{StaticResource TrayItem}" Click="ExitButton_OnClick">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="28" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="&#xE7E8;" FontFamily="Segoe MDL2 Assets" FontSize="15" Foreground="{DynamicResource DangerBrush}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="Exit" FontSize="13.5" Foreground="{DynamicResource DangerBrush}" VerticalAlignment="Center" />
+                </Grid>
+            </Button>
+        </StackPanel>
+    </Border>
+</Window>

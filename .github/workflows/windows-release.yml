@@ -1,0 +1,62 @@
+name: Windows release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_VERSION: "8.0.x"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore src/m4xmudovv/m4xmudovv.csproj -r win-x64
+
+      - name: Publish self-contained app
+        run: >-
+          dotnet publish src/m4xmudovv/m4xmudovv.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishReadyToRun=true -p:DebugType=None -p:DebugSymbols=false
+          -o publish
+
+      - name: Install Inno Setup
+        uses: olegtarasov/get-innosetup@v2
+        with:
+          version: 6.4.2
+
+      - name: Build monochrome installer
+        run: iscc installer/m4xmudovv.iss
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4xmudovv-windows-x64
+          path: dist/m4xmudovv-Setup.exe
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/m4xmudovv-Setup.exe
+          body: |
+            Windows 10/11 x64 installer.
+
+            The installer is self-contained: users do not need to install .NET separately.
+            Wallpapers are imported from the user's own image/video files after installation.

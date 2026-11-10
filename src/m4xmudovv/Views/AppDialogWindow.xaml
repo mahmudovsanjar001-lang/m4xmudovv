@@ -1,0 +1,59 @@
+<Window x:Class="m4xmudovv.Views.AppDialogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="m4xmudovv" Width="440" SizeToContent="Height" MaxHeight="620"
+        WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+        FontFamily="Segoe UI" Foreground="{DynamicResource PrimaryBrush}" Background="{DynamicResource CanvasBrush}"
+        PreviewKeyDown="Window_OnPreviewKeyDown">
+    <Border BorderBrush="{DynamicResource Bd_252A34}" BorderThickness="1">
+        <StackPanel Margin="26,22,26,24">
+            <Border Background="Transparent" MouseLeftButtonDown="Title_OnMouseLeftButtonDown">
+                <TextBlock x:Name="TitleText" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+            </Border>
+            <TextBlock x:Name="MessageText" FontSize="13" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+
+            <Border x:Name="InputFrame" Visibility="Collapsed" Margin="0,16,0,0" Height="44" CornerRadius="8"
+                    Background="{DynamicResource Bg_121418}" BorderBrush="{DynamicResource Bd_23262E}" BorderThickness="1">
+                <TextBox x:Name="InputBox" Background="Transparent" BorderThickness="0" FontSize="14" MaxLength="60"
+                         VerticalContentAlignment="Center" Margin="12,0" TextChanged="InputBox_OnTextChanged" />
+            </Border>
+            <TextBlock x:Name="ErrorText" Visibility="Collapsed" FontSize="12" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" Margin="2,6,0,0" />
+
+            <ScrollViewer x:Name="ChoicesScroll" Visibility="Collapsed" MaxHeight="250" Margin="0,16,0,0"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl x:Name="ChoicesList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,8" Padding="14,10" CornerRadius="8"
+                                    Background="{DynamicResource Bg_121418}" BorderBrush="{DynamicResource Bd_23262E}" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <ToggleButton Grid.Column="1" Style="{StaticResource SwitchToggle}" VerticalAlignment="Center"
+                                                  AutomationProperties.Name="{Binding Name}" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <Button x:Name="NewItemButton" Visibility="Collapsed" Height="38" Padding="16,0" HorizontalAlignment="Left" Margin="0,4,0,0" Click="NewItem_OnClick">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" />
+                    <TextBlock Text="New playlist" FontSize="13" Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,22,0,0">
+                <Button x:Name="CancelButton" Content="Cancel" MinWidth="100" Height="40" Padding="18,0" Margin="0,0,10,0" IsCancel="True" Click="Cancel_OnClick" />
+                <Button x:Name="ConfirmButton" Style="{StaticResource PrimaryButton}" MinWidth="110" Height="40" Padding="18,0" IsDefault="True" Click="Confirm_OnClick" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

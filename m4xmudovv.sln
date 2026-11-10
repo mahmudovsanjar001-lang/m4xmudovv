@@ -1,0 +1,18 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "m4xmudovv", "src\m4xmudovv\m4xmudovv.csproj", "{AA1C1E2A-4B4D-4DE9-8E18-1F49C2AD0D80}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AA1C1E2A-4B4D-4DE9-8E18-1F49C2AD0D80}.Debug|x64.ActiveCfg = Debug|x64
+		{AA1C1E2A-4B4D-4DE9-8E18-1F49C2AD0D80}.Debug|x64.Build.0 = Debug|x64
+		{AA1C1E2A-4B4D-4DE9-8E18-1F49C2AD0D80}.Release|x64.ActiveCfg = Release|x64
+		{AA1C1E2A-4B4D-4DE9-8E18-1F49C2AD0D80}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+EndGlobal
