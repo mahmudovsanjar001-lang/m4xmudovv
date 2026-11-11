@@ -131,7 +131,10 @@ internal sealed class VideoWallpaperWindow : Window
             "--no-video-title-show",
             "--avcodec-hw=any",
             "--no-osd",
-            "--quiet");
+            "--quiet",
+            "--file-caching=150",
+            "--drop-late-frames",
+            "--skip-frames");
     }
 
     private void StartNativePlayback()
@@ -153,7 +156,12 @@ internal sealed class VideoWallpaperWindow : Window
             if (!_player.Play(_media))
                 _ready.TrySetResult("LibVLC rejected the video file");
             else
+            {
+                // Do not wait for the asynchronous Playing callback here; the host performs a
+                // short visibility/clock health check immediately after all monitors are created.
+                _ready.TrySetResult(null);
                 AppLog.Info($"[{_monitor.Id}] LibVLC media opened: '{_path}'");
+            }
         }
         catch (Exception ex)
         {

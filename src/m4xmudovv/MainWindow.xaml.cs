@@ -703,15 +703,9 @@ public partial class MainWindow : Window
         }
 
         // At sign-in Explorer may still be starting. Retry instead of giving up permanently on the first launch.
-        var attempts = _startedFromWindows && item.Type == WallpaperType.Video ? 12 : 3;
+        var attempts = _startedFromWindows && item.Type == WallpaperType.Video ? 5 : 3;
         for (var attempt = 1; attempt <= attempts && !_lifetime.IsCancellationRequested; attempt++)
         {
-            if (_startedFromWindows && item.Type == WallpaperType.Video && !NativeMethods.DiscoverShell().IsValid)
-            {
-                await Task.Delay(Math.Min(250 * attempt, 1500), _lifetime.Token);
-                continue;
-            }
-
             var fit = WallpaperApplyOptions.ParseFitMode(_settings.LastAppliedFitMode);
             var options = new WallpaperApplyOptions(fit, _settings.LastAppliedSpeed, 0);
             StatusText.Text = $"Restoring wallpaper “{item.Title}”…";
@@ -723,7 +717,7 @@ public partial class MainWindow : Window
             }
 
             if (attempt < attempts)
-                await Task.Delay(Math.Min(300 * attempt, 1500), _lifetime.Token);
+                await Task.Delay(Math.Min(250 * attempt, 1000), _lifetime.Token);
         }
 
         AppLog.Warn($"Wallpaper restore did not succeed after {attempts} attempt(s); it can be retried from the tray.");

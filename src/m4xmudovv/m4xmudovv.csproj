@@ -18,7 +18,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Windows Forms is used ONLY for the system tray icon (NotifyIcon). -->
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
     <!-- Fast start (important for "Start with Windows"): precompiled code (ReadyToRun) so nothing has to be JIT-compiled at
          launch, self-contained so the installer works on a PC without .NET, no extra language folders. -->
     <SelfContained>true</SelfContained>
