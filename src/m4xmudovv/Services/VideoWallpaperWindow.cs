@@ -22,6 +22,7 @@ internal sealed class VideoWallpaperWindow : Window
     private readonly string _path;
     private readonly WallpaperApplyOptions _initialOptions;
     private readonly TaskCompletionSource<string?> _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private static readonly Lazy<LibVLC> SharedLibVlc = new(CreateLibVlc);
     private readonly LibVLC _libVlc;
     private readonly MediaPlayer _player;
     private Media? _media;
@@ -54,12 +55,8 @@ internal sealed class VideoWallpaperWindow : Window
 
         // LibVLC is the same class of native playback backend used by desktop wallpaper applications:
         // broad codec support, hardware acceleration when available, and output directly into an HWND.
-        Core.Initialize();
-        _libVlc = new LibVLC(
-            "--no-video-title-show",
-            "--avcodec-hw=any",
-            "--no-osd",
-            "--quiet");
+        // One engine is shared by all monitors; creating a native engine per monitor made sign-in startup slow.
+        _libVlc = SharedLibVlc.Value;
         _player = new MediaPlayer(_libVlc)
         {
             Volume = (int)Math.Round(Math.Clamp(options.Volume, 0, 1) * 100),
@@ -124,8 +121,17 @@ internal sealed class VideoWallpaperWindow : Window
         _player.EndReached -= Player_OnEnded;
         try { _media?.Dispose(); } catch (Exception) { }
         try { _player.Dispose(); } catch (Exception) { }
-        try { _libVlc.Dispose(); } catch (Exception) { }
         try { if (IsVisible) Close(); } catch (InvalidOperationException) { }
+    }
+
+    private static LibVLC CreateLibVlc()
+    {
+        Core.Initialize();
+        return new LibVLC(
+            "--no-video-title-show",
+            "--avcodec-hw=any",
+            "--no-osd",
+            "--quiet");
     }
 
     private void StartNativePlayback()

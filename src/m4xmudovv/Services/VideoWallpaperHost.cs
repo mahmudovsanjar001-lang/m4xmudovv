@@ -10,8 +10,8 @@ namespace m4xmudovv.Services;
 /// <summary>Creates and owns one video window per monitor. Must be used from the WPF UI thread.</summary>
 internal sealed class VideoWallpaperHost
 {
-    private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(15);
-    private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(1500);
+    private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(12);
+    private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(500);
     private readonly List<VideoWallpaperWindow> _windows = new();
 
     public bool IsRunning => _windows.Count > 0;

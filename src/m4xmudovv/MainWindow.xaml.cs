@@ -624,7 +624,7 @@ public partial class MainWindow : Window
         await ApplyWallpaperAsync(item, options, showFailureDialog: true);
     }
 
-    private async Task ApplyWallpaperAsync(WallpaperItem item, WallpaperApplyOptions options, bool showFailureDialog, bool applyLockScreen = true)
+    private async Task<bool> ApplyWallpaperAsync(WallpaperItem item, WallpaperApplyOptions options, bool showFailureDialog, bool applyLockScreen = true)
     {
         WallpaperApplyResult result;
         try
@@ -634,7 +634,7 @@ public partial class MainWindow : Window
         catch (OperationCanceledException)
         {
             ApplyButton.IsEnabled = true;
-            return;
+            return false;
         }
         catch (Exception ex)
         {
@@ -662,15 +662,17 @@ public partial class MainWindow : Window
                 var lockResult = await ApplyItemToLockScreenAsync(item);
                 if (!lockResult.Success) StatusText.Text = result.Message + " Lock screen: " + lockResult.Message;
             }
+            return true;
         }
         else if (showFailureDialog)
             MessageBox.Show(this, result.Message, "Set as Wallpaper — not applied", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+        return false;
     }
 
     private async Task RestoreLastAppliedWallpaperAsync()
     {
         if (_restoredAppliedWallpaper || !_settings.RestoreAppState || string.IsNullOrWhiteSpace(_settings.LastAppliedWallpaperPath)) return;
-        _restoredAppliedWallpaper = true;
         var item = _wallpapers.FirstOrDefault(w => string.Equals(w.FilePath, _settings.LastAppliedWallpaperPath, StringComparison.OrdinalIgnoreCase));
         if (item is null || !File.Exists(item.FilePath))
         {
@@ -678,18 +680,31 @@ public partial class MainWindow : Window
             return;
         }
 
-        // At sign-in explorer may still be starting; a video wallpaper needs its desktop layer, so wait for it (max 40 s).
-        if (_startedFromWindows && item.Type == WallpaperType.Video)
+        // At sign-in Explorer may still be starting. Retry instead of giving up permanently on the first launch.
+        var attempts = _startedFromWindows && item.Type == WallpaperType.Video ? 12 : 3;
+        for (var attempt = 1; attempt <= attempts && !_lifetime.IsCancellationRequested; attempt++)
         {
-            for (var i = 0; i < 80 && !_lifetime.IsCancellationRequested && !NativeMethods.DiscoverShell().IsValid; i++)
-                await Task.Delay(500);
+            if (_startedFromWindows && item.Type == WallpaperType.Video && !NativeMethods.DiscoverShell().IsValid)
+            {
+                await Task.Delay(Math.Min(250 * attempt, 1500), _lifetime.Token);
+                continue;
+            }
+
+            var fit = WallpaperApplyOptions.ParseFitMode(_settings.LastAppliedFitMode);
+            var options = new WallpaperApplyOptions(fit, _settings.LastAppliedSpeed, 0);
+            StatusText.Text = $"Restoring wallpaper “{item.Title}”…";
+            AppLog.Info($"Restoring last applied wallpaper (attempt {attempt}/{attempts}): '{item.FilePath}' fit={fit} speed={options.SpeedRatio}x startup={_startedFromWindows}");
+            if (await ApplyWallpaperAsync(item, options, showFailureDialog: false, applyLockScreen: false))
+            {
+                _restoredAppliedWallpaper = true;
+                return;
+            }
+
+            if (attempt < attempts)
+                await Task.Delay(Math.Min(300 * attempt, 1500), _lifetime.Token);
         }
 
-        var fit = WallpaperApplyOptions.ParseFitMode(_settings.LastAppliedFitMode);
-        var options = new WallpaperApplyOptions(fit, _settings.LastAppliedSpeed, 0);
-        StatusText.Text = $"Restoring wallpaper “{item.Title}”…";
-        AppLog.Info($"Restoring last applied wallpaper: '{item.FilePath}' fit={fit} speed={options.SpeedRatio}x startup={_startedFromWindows}");
-        await ApplyWallpaperAsync(item, options, showFailureDialog: false, applyLockScreen: false);
+        AppLog.Warn($"Wallpaper restore did not succeed after {attempts} attempt(s); it can be retried from the tray.");
     }
     private void UpdateCount()
     {
@@ -1066,7 +1081,7 @@ public partial class MainWindow : Window
         _inTray = true;
         UpdateTrayVisibility();
         if (_wallpapers.Count > 0)
-            Dispatcher.BeginInvoke(new Action(async () => await RestoreLastAppliedWallpaperAsync()), DispatcherPriority.Background);
+            Dispatcher.BeginInvoke(new Action(async () => await RestoreLastAppliedWallpaperAsync()), DispatcherPriority.Normal);
     }
 
     /// <summary>About → Help &amp; support: opens a ready-to-send Gmail compose window (the address is not shown in the UI).</summary>
