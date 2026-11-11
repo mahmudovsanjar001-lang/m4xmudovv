@@ -29,7 +29,7 @@ public sealed class WallpaperItem : INotifyPropertyChanged
         }
     }
 
-    public string FilePath { get; init; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
     private string _previewPath = string.Empty;
     public string PreviewPath
     {
