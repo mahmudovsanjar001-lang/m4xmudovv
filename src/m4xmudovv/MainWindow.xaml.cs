@@ -119,14 +119,36 @@ public partial class MainWindow : Window
     {
         var library = _libraryStore.Load();
         LoadPlaylists(library.Playlists);
+        var relocated = false;
         foreach (var wallpaper in library.Wallpapers)
         {
+            var repairedPath = ResolveBundledWallpaperPath(wallpaper.FilePath);
+            if (repairedPath is not null && !string.Equals(repairedPath, wallpaper.FilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                wallpaper.FilePath = repairedPath;
+                relocated = true;
+            }
             // The persisted value may be a stale path (older builds stored the original image path here).
             // It is refreshed from the thumbnail cache once the window has loaded.
             wallpaper.PreviewPath = string.Empty;
             _wallpapers.Add(wallpaper);
         }
+        if (relocated) SaveLibrary();
         AddBundledWallpapers();
+    }
+
+    /// <summary>Moves bundled entries from an old publish/install folder to this installation's Wallpapers folder.</summary>
+    private static string? ResolveBundledWallpaperPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || File.Exists(path)) return null;
+        var normalized = path.Replace('/', '\\');
+        var marker = "\\Wallpapers\\";
+        var markerIndex = normalized.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (markerIndex < 0) return null;
+
+        var relative = normalized[(markerIndex + 1)..];
+        var candidate = Path.Combine(AppContext.BaseDirectory, relative);
+        return File.Exists(candidate) ? candidate : null;
     }
 
     private const int BundledWallpaperSetVersion = 2;

@@ -18,7 +18,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Windows Forms is used ONLY for the system tray icon (NotifyIcon). -->
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <!-- Fast start (important for "Start with Windows"): precompiled code (ReadyToRun) so nothing has to be JIT-compiled at
          launch, self-contained so the installer works on a PC without .NET, no extra language folders. -->
     <SelfContained>true</SelfContained>
@@ -40,7 +40,8 @@
     <Resource Include="Assets\m4xmudovv-logo.png" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Optional wallpaper packs are distributed separately from the lightweight installer. -->
+    <!-- The release workflow injects the bundled wallpaper pack before publishing the full installer. -->
+    <Content Include="Wallpapers\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <!-- Hardware-accelerated, codec-rich wallpaper playback (Lively-style native backend). -->

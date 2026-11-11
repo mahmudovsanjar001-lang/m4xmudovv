@@ -2,11 +2,13 @@
 
 A clean Windows 10/11 x64 WPF live wallpaper application, built from scratch without Lively Wallpaper source code.
 
-## Lightweight Windows installer
+## Windows installer
 
-The installer is built as a **self-contained Windows x64** application, so users do not need to install .NET or another runtime separately. The large sample video wallpapers are intentionally not embedded in `setup.exe` or committed to GitHub; users can import their own image/video files from the app, which keeps the download much smaller and avoids GitHub's large-file limits.
+The installer is built as a **self-contained Windows x64** application, so users do not need to install .NET or another runtime separately. The full GitHub release installer includes the bundled video wallpapers; the large media files are downloaded by GitHub Actions during the Windows build rather than committed to the source repository.
 
-On Windows, run `build-installer.bat` after installing the .NET 8 SDK and Inno Setup 6. The installer uses a black-and-white classic wizard style and is written to `dist\m4xmudovv-Setup.exe`.
+On Windows, run `build-installer.bat` after installing the .NET 8 SDK and Inno Setup 6. The installer uses app-branded dark wizard artwork and is written to `dist\m4xmudovv-Setup.exe`. If the source tree does not contain the optional `Wallpapers` folder, the local build produces a runtime-only installer; the GitHub Actions release is the full build with videos.
+
+The application also repairs old saved bundled paths after reinstalling or moving the app. For example, an old `D:\Video\package\publish\Wallpapers\Videos\v321.mp4` entry is remapped to the current installation's `Wallpapers\Videos\v321.mp4` when that file exists.
 
 GitHub Actions is also configured in `.github/workflows/windows-release.yml`. Push a tag such as `v2.0.0` to build the installer on a Windows runner and publish it automatically under GitHub Releases.
 

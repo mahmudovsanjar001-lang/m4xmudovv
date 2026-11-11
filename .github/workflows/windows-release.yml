@@ -27,6 +27,14 @@ jobs:
       - name: Restore
         run: dotnet restore src/m4xmudovv/m4xmudovv.csproj -r win-x64
 
+      - name: Add bundled wallpaper videos to the full installer
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v2.0.0 --repo $env:GITHUB_REPOSITORY --pattern m4xmudovv-wallpapers.zip --output wallpaper-pack.zip
+          Expand-Archive -Path wallpaper-pack.zip -DestinationPath src/m4xmudovv -Force
+
       - name: Publish self-contained app
         run: >-
           dotnet publish src/m4xmudovv/m4xmudovv.csproj
