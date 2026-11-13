@@ -22,7 +22,6 @@ internal sealed class VideoWallpaperWindow : Window
     private readonly string _path;
     private readonly WallpaperApplyOptions _initialOptions;
     private readonly TaskCompletionSource<string?> _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private static readonly Lazy<LibVLC> SharedLibVlc = new(CreateLibVlc);
     private readonly LibVLC _libVlc;
     private readonly MediaPlayer _player;
     private Media? _media;
@@ -32,7 +31,13 @@ internal sealed class VideoWallpaperWindow : Window
     private bool _stopped;
     private int _loopRestartPending;
 
-    public VideoWallpaperWindow(string path, MonitorInfo monitor, IReadOnlyList<AttachTarget> targets, WallpaperApplyOptions options)
+    private static readonly Lazy<LibVLC> HardwareLibVlc = new(() => CreateLibVlc(useHardwareDecoding: true));
+    private static readonly Lazy<LibVLC> SoftwareLibVlc = new(() => CreateLibVlc(useHardwareDecoding: false));
+
+    public static LibVLC GetEngine(bool useHardwareDecoding) =>
+        (useHardwareDecoding ? HardwareLibVlc : SoftwareLibVlc).Value;
+
+    public VideoWallpaperWindow(string path, MonitorInfo monitor, IReadOnlyList<AttachTarget> targets, WallpaperApplyOptions options, LibVLC libVlc)
     {
         _path = path;
         _monitor = monitor;
@@ -53,10 +58,9 @@ internal sealed class VideoWallpaperWindow : Window
         Width = 16;
         Height = 16;
 
-        // LibVLC is the same class of native playback backend used by desktop wallpaper applications:
-        // broad codec support, hardware acceleration when available, and output directly into an HWND.
-        // One engine is shared by all monitors; creating a native engine per monitor made sign-in startup slow.
-        _libVlc = SharedLibVlc.Value;
+        // One engine is shared by all monitors. The host can retry with the software engine when
+        // a driver reports Playing but never advances the decoded clock.
+        _libVlc = libVlc;
         _player = new MediaPlayer(_libVlc)
         {
             Volume = (int)Math.Round(Math.Clamp(options.Volume, 0, 1) * 100),
@@ -75,7 +79,15 @@ internal sealed class VideoWallpaperWindow : Window
     public string? AttachedTo { get; private set; }
     public Task<string?> Ready => _ready.Task;
 
-    public bool IsPlaybackProgressing() => _player.Time > 0 || (_player.Length > 0 && _player.Position > 0);
+    public bool IsPlaybackProgressing()
+    {
+        var time = _player.Time;
+        var position = _player.Position;
+        var state = _player.State;
+        var progressing = time > 0 || (_player.Length > 0 && position > 0.001f);
+        AppLog.Info($"[{_monitor.Id}] playback probe: state={state} time={time}ms length={_player.Length}ms position={position:0.000} progressing={progressing}");
+        return progressing;
+    }
 
     public string DescribeState() =>
         $"[{_monitor.Id}] attachedTo={AttachedTo ?? "(none)"} time={_player.Time}ms length={_player.Length}ms " +
@@ -124,17 +136,25 @@ internal sealed class VideoWallpaperWindow : Window
         try { if (IsVisible) Close(); } catch (InvalidOperationException) { }
     }
 
-    private static LibVLC CreateLibVlc()
+    private static LibVLC CreateLibVlc(bool useHardwareDecoding)
     {
         Core.Initialize();
-        return new LibVLC(
+        var options = new List<string>
+        {
             "--no-video-title-show",
-            "--avcodec-hw=any",
             "--no-osd",
             "--quiet",
-            "--file-caching=150",
-            "--drop-late-frames",
-            "--skip-frames");
+            useHardwareDecoding ? "--avcodec-hw=any" : "--avcodec-hw=none",
+            useHardwareDecoding ? "--file-caching=150" : "--file-caching=300"
+        };
+        if (useHardwareDecoding)
+        {
+            options.Add("--drop-late-frames");
+            options.Add("--skip-frames");
+        }
+
+        AppLog.Info($"Creating LibVLC engine: decoder={(useHardwareDecoding ? "hardware-first" : "software")}, options={string.Join(" ", options)}");
+        return new LibVLC(options.ToArray());
     }
 
     private void StartNativePlayback()
@@ -172,13 +192,13 @@ internal sealed class VideoWallpaperWindow : Window
 
     private void Player_OnPlaying(object? sender, EventArgs e)
     {
-        AppLog.Info($"[{_monitor.Id}] LibVLC Playing: length={_player.Length}ms");
+        AppLog.Info($"[{_monitor.Id}] LibVLC Playing: length={_player.Length}ms time={_player.Time}ms position={_player.Position:0.000} state={_player.State}");
         _ready.TrySetResult(null);
     }
 
     private void Player_OnError(object? sender, EventArgs e)
     {
-        var message = "LibVLC could not decode this video or create its video output";
+        var message = $"LibVLC could not decode this video or create its video output (state={_player.State}, time={_player.Time}ms, length={_player.Length}ms)";
         AppLog.Error($"[{_monitor.Id}] {message}");
         _ready.TrySetResult(message);
     }

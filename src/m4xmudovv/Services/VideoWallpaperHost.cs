@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using LibVLCSharp.Shared;
 
 namespace m4xmudovv.Services;
 
@@ -11,7 +12,7 @@ namespace m4xmudovv.Services;
 internal sealed class VideoWallpaperHost
 {
     private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(12);
-    private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(800);
     private readonly List<VideoWallpaperWindow> _windows = new();
 
     public bool IsRunning => _windows.Count > 0;
@@ -44,8 +45,6 @@ internal sealed class VideoWallpaperHost
         if (monitors.Count == 0)
             return WallpaperApplyResult.FailWithLog("No monitors were found, so the video wallpaper could not be placed.");
 
-        // Lively's current WinDesktopCore handles the Windows 11 raised-desktop layout specially:
-        // the video must be a layered child of Progman and sit immediately below SHELLDLL_DefView.
         var targets = layout.IsRaisedDesktop && layout.ShellDefView != IntPtr.Zero
             ? new List<AttachTarget> { new(layout.Progman, layout.ShellDefView, "Progman raised desktop", UseLayeredParenting: true) }
             : new List<AttachTarget> { new(layout.WorkerW, IntPtr.Zero, "WorkerW") };
@@ -53,11 +52,45 @@ internal sealed class VideoWallpaperHost
         if (layout.IsProgmanChild && !layout.IsRaisedDesktop)
             targets.Add(new AttachTarget(layout.Progman, NativeMethods.HWND_BOTTOM, "Progman (bottom of z-order)"));
 
+        // Hardware decoding is preferred, but some GPU/driver combinations report Playing while
+        // leaving the decoded clock at 0 ms. A clean software-engine restart handles that case.
+        var attempts = new[] { true, false };
+        var errors = new List<string>();
+        foreach (var useHardwareDecoding in attempts)
+        {
+            var result = await StartWithEngineAsync(path, title, options, layout, monitors, targets, useHardwareDecoding, cancellationToken);
+            if (result.Success) return result;
+            errors.Add(result.Message);
+            if (!useHardwareDecoding)
+                break;
+
+            AppLog.Warn($"Hardware-first playback failed for '{title}'. Retrying with software decoding.");
+            Stop();
+            DesktopWallpaperApi.ReapplyCurrent();
+        }
+
+        var summary = string.Join("\n", errors.Where(error => !string.IsNullOrWhiteSpace(error)).Select(error => "• " + error));
+        return WallpaperApplyResult.FailWithLog($"The video wallpaper could not be started after hardware and software decoder attempts.\n{summary}");
+    }
+
+    private async Task<WallpaperApplyResult> StartWithEngineAsync(
+        string path,
+        string title,
+        WallpaperApplyOptions options,
+        ShellLayout layout,
+        IReadOnlyList<MonitorInfo> monitors,
+        IReadOnlyList<AttachTarget> targets,
+        bool useHardwareDecoding,
+        CancellationToken cancellationToken)
+    {
+        var mode = useHardwareDecoding ? "hardware-first" : "software";
+        AppLog.Info($"Starting video engine mode={mode} monitors={monitors.Count} file='{path}'");
         try
         {
+            var engine = VideoWallpaperWindow.GetEngine(useHardwareDecoding);
             foreach (var monitor in monitors)
             {
-                var window = new VideoWallpaperWindow(path, monitor, targets, options);
+                var window = new VideoWallpaperWindow(path, monitor, targets, options, engine);
                 _windows.Add(window);
                 window.Show();
             }
@@ -72,7 +105,7 @@ internal sealed class VideoWallpaperHost
             {
                 Stop();
                 DesktopWallpaperApi.ReapplyCurrent();
-                return WallpaperApplyResult.FailWithLog($"Timed out after {OpenTimeout.TotalSeconds:0} s while opening “{title}”. The video format or codec may not be supported by Windows.");
+                return WallpaperApplyResult.FailWithLog($"Timed out after {OpenTimeout.TotalSeconds:0} s while opening “{title}” in {mode} mode.");
             }
 
             var results = await all;
@@ -93,10 +126,11 @@ internal sealed class VideoWallpaperHost
             if (_windows.Count == 0)
             {
                 DesktopWallpaperApi.ReapplyCurrent();
-                return WallpaperApplyResult.FailWithLog($"The video wallpaper could not be started: {failures.First()}");
+                var detail = failures.Count > 0 ? failures[0] : "all monitor windows failed before reporting a reason";
+                return WallpaperApplyResult.FailWithLog($"The video wallpaper could not be started in {mode} mode: {detail}");
             }
 
-            // "Opened" is not enough: give playback a moment, then confirm the windows are still attached and the clock advances.
+            // "Opened" is not enough: confirm the output is attached and the decoded clock advances.
             await Task.Delay(SettleTime, cancellationToken);
             var healthy = new List<VideoWallpaperWindow>();
             foreach (var window in _windows)
@@ -109,7 +143,7 @@ internal sealed class VideoWallpaperHost
                 }
                 else if (!window.IsPlaybackProgressing())
                 {
-                    failures.Add($"monitor {window.Monitor.Id}: the video opened but playback did not advance (decoder stalled)");
+                    failures.Add($"monitor {window.Monitor.Id}: decoder stalled with no clock progress in {mode} mode");
                     window.Stop();
                 }
                 else healthy.Add(window);
@@ -120,11 +154,12 @@ internal sealed class VideoWallpaperHost
             if (_windows.Count == 0)
             {
                 DesktopWallpaperApi.ReapplyCurrent();
-                return WallpaperApplyResult.FailWithLog($"The video wallpaper could not be started: {failures.First()}");
+                var detail = failures.Count > 0 ? failures[0] : "all monitor windows failed the playback health check";
+                return WallpaperApplyResult.FailWithLog($"The video wallpaper could not be started in {mode} mode: {detail}");
             }
 
             var attached = string.Join(", ", _windows.Select(window => window.AttachedTo).Distinct());
-            var message = $"Video wallpaper “{title}” is playing on {_windows.Count} of {monitors.Count} monitor(s) ({options.FitMode}, {options.SpeedRatio:0.##}x, muted; attached via {attached}).";
+            var message = $"Video wallpaper “{title}” is playing on {_windows.Count} of {monitors.Count} monitor(s) ({options.FitMode}, {options.SpeedRatio:0.##}x, muted; decoder={mode}; attached via {attached}).";
             if (failures.Count > 0) message += $" Problems: {string.Join("; ", failures)}";
             AppLog.Info("=== Video wallpaper OK: " + message);
             return WallpaperApplyResult.Ok(message);
@@ -136,10 +171,10 @@ internal sealed class VideoWallpaperHost
         }
         catch (Exception ex)
         {
-            AppLog.Error("Video wallpaper start failed with an exception.", ex);
+            AppLog.Error($"Video wallpaper start failed in {mode} mode.", ex);
             Stop();
             DesktopWallpaperApi.ReapplyCurrent();
-            return WallpaperApplyResult.FailWithLog($"The video wallpaper could not be started: {ex.Message}");
+            return WallpaperApplyResult.FailWithLog($"The video wallpaper could not be started in {mode} mode: {ex.Message}");
         }
     }
 
