@@ -106,7 +106,7 @@
             </Border>
         </DataTemplate>
     </Window.Resources>
-    <Border BorderBrush="{DynamicResource Bd_252A34}" BorderThickness="1" CornerRadius="14" Background="{DynamicResource CanvasBrush}">
+    <Border BorderThickness="0" CornerRadius="14" Background="{DynamicResource CanvasBrush}">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="210" />
@@ -915,6 +915,24 @@
                                             </Canvas>
                                         </Viewbox>
                                         <TextBlock Text="Contact support" FontSize="13" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <Border Style="{StaticResource SettingsDivider}" />
+                            <Grid Margin="20,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,24,0" VerticalAlignment="Center">
+                                    <TextBlock Style="{StaticResource SettingsTitle}" Text="Telegram" />
+                                    <TextBlock Style="{StaticResource SettingsDesc}" Text="Follow us for updates, new wallpapers, announcements and more." TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button Grid.Column="1" x:Name="TelegramButton" Height="38" MinWidth="170" Padding="16,0" VerticalAlignment="Center"
+                                        Background="#229ED9" BorderBrush="#229ED9" Foreground="White" AutomationProperties.Name="Join our Telegram" ToolTip="Open the official Telegram channel" Click="Telegram_OnClick">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="✈" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" />
+                                        <TextBlock Text="Join our Telegram" FontSize="13" Margin="9,0,0,0" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                             </Grid>

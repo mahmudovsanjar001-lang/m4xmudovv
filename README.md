@@ -2,6 +2,13 @@
 
 A clean Windows 10/11 x64 WPF live wallpaper application, built from scratch without Lively Wallpaper source code.
 
+## v3.0 update
+
+- Startup phase timing is written to the diagnostic log so Windows startup and wallpaper restore can be measured separately.
+- The original PersonalizationCSP lock-screen values are backed up before the administrator fallback changes them and restored when the feature is disabled.
+- The About page includes a dark-themed Telegram button linking to https://t.me/m4xmudovvv.
+- The custom borderless window no longer draws the 1 px outer border that appeared as a white line at the top.
+
 ## Windows installer
 
 The installer is built as a **self-contained Windows x64** application, so users do not need to install .NET or another runtime separately. The full GitHub release installer includes the bundled video wallpapers; the large media files are downloaded by GitHub Actions during the Windows build rather than committed to the source repository.

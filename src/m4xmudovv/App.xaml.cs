@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Windows;
 using m4xmudovv.Services;
 
@@ -14,6 +15,8 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        var startupTimer = Stopwatch.StartNew();
+        AppLog.Info("Startup phase: WPF application initialized.");
 
         // Elevated helper mode (lock-screen registry fallback): no UI, no single-instance check, just do the job and exit.
         if (e.Args.Length > 0 && (e.Args[0].Equals(LockScreenWallpaperService.SetCommand, StringComparison.OrdinalIgnoreCase) ||
@@ -55,12 +58,14 @@ public partial class App : Application
         var startedFromWindows = e.Args.Any(arg => string.Equals(arg, "--startup", StringComparison.OrdinalIgnoreCase));
         _mainWindow = new MainWindow(_settingsService, _themeService, startedFromWindows);
         MainWindow = _mainWindow;
+        AppLog.Info($"Startup phase: MainWindow constructed in {startupTimer.ElapsedMilliseconds} ms; startedFromWindows={startedFromWindows}.");
         _instance.ListenForSignal(() => Dispatcher.BeginInvoke(new Action(() => _mainWindow?.ShowFromTray())));
 
         SessionEnding += (_, _) => _mainWindow?.PrepareForExit();   // never block a Windows sign-out by hiding to the tray
 
         if (settings.StartMinimizedToTray || startedFromWindows) _mainWindow.StartInTray();
         else _mainWindow.Show();
+        AppLog.Info($"Startup phase: tray/window requested at {startupTimer.ElapsedMilliseconds} ms.");
     }
 
     protected override void OnExit(ExitEventArgs e)

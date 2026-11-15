@@ -186,10 +186,13 @@ public partial class MainWindow : Window
     {
         Loaded -= MainWindow_OnLoaded;
         if (_wallpapers.Count == 0) return;
+        var startupTimer = System.Diagnostics.Stopwatch.StartNew();
         // The desktop wallpaper comes first: it does not need thumbnails, so it must not wait for them.
         var restoreTask = RestoreLastAppliedWallpaperAsync();
+        AppLog.Info($"Startup phase: wallpaper restore dispatched at {startupTimer.ElapsedMilliseconds} ms after window Loaded.");
         await PrepareLibraryUiAsync();
         await restoreTask;
+        AppLog.Info($"Startup phase: library preparation and wallpaper restore completed in {startupTimer.ElapsedMilliseconds} ms.");
         if (!_lifetime.IsCancellationRequested) StatusText.Text = "Ready to preview";
     }
 
@@ -1122,6 +1125,20 @@ public partial class MainWindow : Window
                     $"mailto:{to}?subject={Uri.EscapeDataString(subject)}") { UseShellExecute = true });
             }
             catch (Exception) { StatusText.Text = "Could not open the mail window."; }
+        }
+    }
+
+    private void Telegram_OnClick(object sender, RoutedEventArgs e)
+    {
+        const string channel = "https://t.me/m4xmudovvv";
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(channel) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Could not open the Telegram channel in the browser.", ex);
+            StatusText.Text = "Could not open Telegram in the browser.";
         }
     }
 

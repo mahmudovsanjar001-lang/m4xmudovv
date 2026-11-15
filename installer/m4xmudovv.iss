@@ -1,6 +1,6 @@
 ; Inno Setup 6 script: builds a lightweight, self-contained m4xmudovv-Setup.exe.
 #define AppName "m4xmudovv"
-#define AppVersion "2.2.1"
+#define AppVersion "3.0.0"
 #define AppExe "m4xmudovv.exe"
 
 [Setup]

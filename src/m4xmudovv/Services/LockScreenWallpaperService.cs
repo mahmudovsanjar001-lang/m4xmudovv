@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
@@ -32,6 +33,9 @@ internal static class LockScreenWallpaperService
 
     private static string SharedFolder => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "m4xmudovv", "LockScreen");
+
+    private static string PolicyBackupFile => Path.Combine(UserFolder, "original-policy.json");
+    private sealed record PolicyBackup(bool KeyExisted, string? ImagePath, string? ImageUrl, int? ImageStatus);
 
     /// <summary>True when the last successful apply went through the administrator (registry) path.</summary>
     public static bool UsedPolicyPath { get; private set; }
@@ -120,13 +124,12 @@ internal static class LockScreenWallpaperService
 
             if (args[0].Equals(ClearCommand, StringComparison.OrdinalIgnoreCase))
             {
-                key.DeleteValue("LockScreenImagePath", throwOnMissingValue: false);
-                key.DeleteValue("LockScreenImageUrl", throwOnMissingValue: false);
-                key.DeleteValue("LockScreenImageStatus", throwOnMissingValue: false);
+                RestorePolicy(key);
                 return 0;
             }
 
             if (args.Length < 2 || !File.Exists(args[1])) return 3;
+            BackupPolicy(key);
             key.SetValue("LockScreenImagePath", args[1], RegistryValueKind.String);
             key.SetValue("LockScreenImageUrl", args[1], RegistryValueKind.String);
             key.SetValue("LockScreenImageStatus", 1, RegistryValueKind.DWord);
@@ -169,6 +172,41 @@ internal static class LockScreenWallpaperService
             AppLog.Error("Lock-screen: starting the administrator helper failed.", ex);
             return (false, $"The administrator helper could not be started: {ex.Message}");
         }
+    }
+
+    private static void BackupPolicy(RegistryKey key)
+    {
+        if (File.Exists(PolicyBackupFile)) return;
+        Directory.CreateDirectory(UserFolder);
+        var backup = new PolicyBackup(
+            KeyExisted: key.GetValue("LockScreenImagePath") is not null || key.GetValue("LockScreenImageUrl") is not null || key.GetValue("LockScreenImageStatus") is not null,
+            ImagePath: key.GetValue("LockScreenImagePath") as string,
+            ImageUrl: key.GetValue("LockScreenImageUrl") as string,
+            ImageStatus: key.GetValue("LockScreenImageStatus") is int status ? status : null);
+        File.WriteAllText(PolicyBackupFile, JsonSerializer.Serialize(backup, new JsonSerializerOptions { WriteIndented = true }));
+        AppLog.Info($"Lock-screen: original policy backed up to '{PolicyBackupFile}'.");
+    }
+
+    private static void RestorePolicy(RegistryKey key)
+    {
+        if (!File.Exists(PolicyBackupFile))
+        {
+            AppLog.Warn("Lock-screen: no original policy backup exists; leaving existing Windows policy untouched.");
+            return;
+        }
+
+        var backup = JsonSerializer.Deserialize<PolicyBackup>(File.ReadAllText(PolicyBackupFile));
+        if (backup is null) throw new InvalidDataException("The lock-screen policy backup is invalid.");
+
+        if (backup.ImagePath is null) key.DeleteValue("LockScreenImagePath", throwOnMissingValue: false);
+        else key.SetValue("LockScreenImagePath", backup.ImagePath, RegistryValueKind.String);
+        if (backup.ImageUrl is null) key.DeleteValue("LockScreenImageUrl", throwOnMissingValue: false);
+        else key.SetValue("LockScreenImageUrl", backup.ImageUrl, RegistryValueKind.String);
+        if (backup.ImageStatus is null) key.DeleteValue("LockScreenImageStatus", throwOnMissingValue: false);
+        else key.SetValue("LockScreenImageStatus", backup.ImageStatus.Value, RegistryValueKind.DWord);
+
+        File.Delete(PolicyBackupFile);
+        AppLog.Info("Lock-screen: original policy restored.");
     }
 
     // ------------------------------------------------------------------------------------------
