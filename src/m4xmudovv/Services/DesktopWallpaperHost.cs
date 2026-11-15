@@ -25,12 +25,13 @@ public sealed class DesktopWallpaperHost : IWallpaperHost
     private static readonly string[] NativeImageExtensions = [".jpg", ".jpeg", ".png", ".bmp"];
 
     private readonly VideoWallpaperHost _video = new();
+    private readonly HtmlWallpaperHost _html = new();
     private readonly string _convertedDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "m4xmudovv",
         "wallpapers");
 
-    public bool IsVideoWallpaperRunning => _video.IsRunning;
+    public bool IsVideoWallpaperRunning => _video.IsRunning || _html.IsRunning;
 
     public async Task<WallpaperApplyResult> ApplyAsync(WallpaperItem wallpaper, WallpaperApplyOptions options, CancellationToken cancellationToken = default)
     {
@@ -38,9 +39,17 @@ public sealed class DesktopWallpaperHost : IWallpaperHost
         if (string.IsNullOrWhiteSpace(wallpaper.FilePath))
             return WallpaperApplyResult.FailWithLog($"“{wallpaper.Title}” has no file path stored in the library.");
 
-        return wallpaper.Type == WallpaperType.Video
-            ? await _video.StartAsync(wallpaper.FilePath, wallpaper.Title, options, cancellationToken)
-            : await ApplyImageAsync(wallpaper, options, cancellationToken);
+        if (wallpaper.Type == WallpaperType.Video)
+        {
+            _html.Stop();
+            return await _video.StartAsync(wallpaper.FilePath, wallpaper.Title, options, cancellationToken);
+        }
+        if (wallpaper.Type == WallpaperType.Html)
+        {
+            _video.Stop();
+            return await _html.StartAsync(wallpaper.FilePath, wallpaper.Title, cancellationToken);
+        }
+        return await ApplyImageAsync(wallpaper, options, cancellationToken);
     }
 
     private async Task<WallpaperApplyResult> ApplyImageAsync(WallpaperItem wallpaper, WallpaperApplyOptions options, CancellationToken cancellationToken)
@@ -66,8 +75,9 @@ public sealed class DesktopWallpaperHost : IWallpaperHost
         AppLog.Info($"Wallpaper file to apply: '{file}'");
 
         // A static wallpaper replaces any running video wallpaper.
-        var hadVideo = _video.IsRunning;
+        var hadWallpaper = _video.IsRunning || _html.IsRunning;
         _video.Stop();
+        _html.Stop();
 
         var attempts = new List<string>();
 
@@ -115,7 +125,7 @@ public sealed class DesktopWallpaperHost : IWallpaperHost
             attempts.Add($"SystemParametersInfo: {Describe(ex)}");
         }
 
-        if (hadVideo) DesktopWallpaperApi.ReapplyCurrent();
+        if (hadWallpaper) DesktopWallpaperApi.ReapplyCurrent();
         return WallpaperApplyResult.FailWithLog(
             $"Windows did not apply “{wallpaper.Title}” as the desktop wallpaper.\n\n" + string.Join("\n", attempts.Select(a => "• " + a)));
     }
@@ -196,8 +206,9 @@ public sealed class DesktopWallpaperHost : IWallpaperHost
     /// <summary>Removes a running video wallpaper and repaints the static wallpaper. Safe to call repeatedly.</summary>
     public void Shutdown()
     {
-        if (!_video.IsRunning) return;
+        if (!_video.IsRunning && !_html.IsRunning) return;
         _video.Stop();
+        _html.Stop();
         DesktopWallpaperApi.ReapplyCurrent();
     }
 }

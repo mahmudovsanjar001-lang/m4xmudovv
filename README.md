@@ -8,6 +8,8 @@ A clean Windows 10/11 x64 WPF live wallpaper application, built from scratch wit
 - The original PersonalizationCSP lock-screen values are backed up before the administrator fallback changes them and restored when the feature is disabled.
 - The About page includes a dark-themed Telegram button linking to https://t.me/m4xmudovvv.
 - The custom borderless window no longer draws the 1 px outer border that appeared as a white line at the top.
+- `.html` and `.htm` files can be imported as live HTML wallpapers and rendered across all monitors through WebView2.
+- HTML wallpaper playback requires the Microsoft Edge WebView2 Evergreen Runtime, which is present on most current Windows 10/11 systems.
 
 ## Windows installer
 

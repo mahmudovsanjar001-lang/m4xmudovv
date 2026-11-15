@@ -47,6 +47,8 @@
     <!-- Hardware-accelerated, codec-rich wallpaper playback (Lively-style native backend). -->
     <PackageReference Include="LibVLCSharp" Version="3.9.0" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
+    <!-- WebView2 renders imported HTML/CSS/JS files as live wallpapers. The Evergreen Runtime is required on Windows. -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
     <!-- Direct HWND output does not use WinUI; suppress LibVLCSharp's optional Windows App SDK build assets. -->
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240627000" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>

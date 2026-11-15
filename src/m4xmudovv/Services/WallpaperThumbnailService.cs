@@ -68,6 +68,8 @@ public sealed class WallpaperThumbnailService
     /// <summary>Returns the cached thumbnail path, generating the thumbnail first when needed. Null if it cannot be made.</summary>
     public async Task<string?> GetOrCreateAsync(WallpaperItem item, CancellationToken cancellationToken = default)
     {
+        if (item.Type == WallpaperType.Html) return null;
+
         var quality = _quality;                 // one consistent quality for the whole operation
         var profile = ProfileFor(quality);
         var cachePath = TryGetCachePath(item.FilePath, quality);

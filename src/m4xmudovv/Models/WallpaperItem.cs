@@ -8,7 +8,8 @@ namespace m4xmudovv.Models;
 public enum WallpaperType
 {
     Image,
-    Video
+    Video,
+    Html
 }
 
 public sealed class WallpaperItem : INotifyPropertyChanged
@@ -61,7 +62,12 @@ public sealed class WallpaperItem : INotifyPropertyChanged
     }
 
     public WallpaperType Type { get; init; }
-    public string TypeLabel => Type == WallpaperType.Video ? "VIDEO" : "IMAGE";
+    public string TypeLabel => Type switch
+    {
+        WallpaperType.Video => "VIDEO",
+        WallpaperType.Html => "HTML",
+        _ => "IMAGE"
+    };
     public string DurationLabel { get; init; } = string.Empty;
 
     private bool _isFavorite;

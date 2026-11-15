@@ -214,7 +214,7 @@ public partial class MainWindow : Window
 
     private async void ImportMedia_OnClick(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog { Title = "Import wallpaper media", Multiselect = true, Filter = "Supported media|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.mp4;*.webm;*.wmv;*.mov;*.mkv|All files|*.*" };
+        var dialog = new OpenFileDialog { Title = "Import wallpaper media", Multiselect = true, Filter = "Supported media|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.mp4;*.webm;*.wmv;*.mov;*.mkv;*.html;*.htm|All files|*.*" };
         if (dialog.ShowDialog(this) != true) return;
         var importedItems = new List<WallpaperItem>();
         var skipped = 0;
@@ -412,7 +412,12 @@ public partial class MainWindow : Window
         PreviewControls.Visibility = item.Type == WallpaperType.Video ? Visibility.Visible : Visibility.Collapsed;
         DurationText.Text = "—";
         SelectedTitleText.Text = item.Title;
-        SelectedTypeText.Text = item.Type == WallpaperType.Video ? "LOCAL VIDEO • ready for playback" : "LOCAL IMAGE • static preview";
+        SelectedTypeText.Text = item.Type switch
+        {
+            WallpaperType.Video => "LOCAL VIDEO • ready for playback",
+            WallpaperType.Html => "LOCAL HTML • live via WebView2",
+            _ => "LOCAL IMAGE • static preview"
+        };
         SelectedPathText.Text = item.FilePath;
         PreviewEmptyText.Visibility = Visibility.Collapsed;
         ResolutionText.Text = "—";
@@ -433,6 +438,15 @@ public partial class MainWindow : Window
                 StatusText.Text = $"Previewing {item.Title}";
             }
             catch (Exception ex) { ShowPreviewError(ex.Message); }
+        }
+        else if (item.Type == WallpaperType.Html)
+        {
+            PreviewImage.Visibility = Visibility.Collapsed;
+            PreviewMedia.Visibility = Visibility.Collapsed;
+            PreviewEmptyText.Visibility = Visibility.Visible;
+            PreviewEmptyText.Text = "HTML live wallpaper — click Set as Wallpaper to run it via WebView2.";
+            FileSizeText.Text = FormatFileSize(item.FilePath);
+            StatusText.Text = $"HTML wallpaper ready: {item.Title}";
         }
         else
         {
@@ -463,7 +477,7 @@ public partial class MainWindow : Window
     private void Play_OnClick(object sender, RoutedEventArgs e)
     {
         if (_selectedWallpaper is null) { StatusText.Text = "Select a wallpaper before playing"; return; }
-        if (_selectedWallpaper.Type == WallpaperType.Image) { StatusText.Text = "Images do not have playback controls"; return; }
+        if (_selectedWallpaper.Type != WallpaperType.Video) { StatusText.Text = "This wallpaper does not have video playback controls"; return; }
         try { PreviewMedia.Play(); _playbackTimer.Start(); SetPlaying(true); StatusText.Text = $"Playing {_selectedWallpaper.Title}"; } catch (Exception ex) { ShowPreviewError($"Unable to play video: {ex.Message}"); }
     }
 
@@ -642,9 +656,12 @@ public partial class MainWindow : Window
         var options = GetApplyOptions();
         AppLog.Info($"Set as Wallpaper clicked: title='{item.Title}' type={item.Type} path='{item.FilePath}' fit={options.FitMode} speed={options.SpeedRatio}x");
         ApplyButton.IsEnabled = false;
-        StatusText.Text = item.Type == WallpaperType.Video
-            ? $"Starting video wallpaper “{item.Title}”…"
-            : $"Setting “{item.Title}” as the desktop wallpaper…";
+        StatusText.Text = item.Type switch
+        {
+            WallpaperType.Video => $"Starting video wallpaper “{item.Title}”…",
+            WallpaperType.Html => $"Starting HTML wallpaper “{item.Title}”…",
+            _ => $"Setting “{item.Title}” as the desktop wallpaper…"
+        };
 
         await ApplyWallpaperAsync(item, options, showFailureDialog: true);
     }
@@ -768,7 +785,7 @@ public partial class MainWindow : Window
         {
             IEnumerable<WallpaperItem> source = _wallpapers;
             if (_category == LibraryCategory.Images) source = source.Where(item => item.Type == WallpaperType.Image);
-            else if (_category == LibraryCategory.Videos) source = source.Where(item => item.Type == WallpaperType.Video);
+            else if (_category == LibraryCategory.Videos) source = source.Where(item => item.Type is WallpaperType.Video or WallpaperType.Html);
             if (query.Length > 0) source = source.Where(item => item.Title.Contains(query, StringComparison.OrdinalIgnoreCase));
             WallpaperItems.ItemsSource = source.ToList();
         }
@@ -879,6 +896,9 @@ public partial class MainWindow : Window
     /// <summary>The lock screen can only show a still image: the image itself, or the cached thumbnail of a video.</summary>
     private async Task<(bool Success, string Message)> ApplyItemToLockScreenAsync(WallpaperItem item)
     {
+        if (item.Type == WallpaperType.Html)
+            return (false, "HTML wallpapers are live desktop backgrounds and cannot be used as a static lock-screen image.");
+
         string? source = item.FilePath;
         if (item.Type == WallpaperType.Video)
         {

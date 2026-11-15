@@ -9,11 +9,14 @@ public sealed class WallpaperImportService
 {
     private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg", ".bmp", ".gif"];
     private static readonly string[] VideoExtensions = [".mp4", ".webm", ".wmv", ".mov", ".mkv"];
+    private static readonly string[] HtmlExtensions = [".html", ".htm"];
 
     public WallpaperItem CreateItem(string path)
     {
         var extension = Path.GetExtension(path).ToLowerInvariant();
-        var type = VideoExtensions.Contains(extension) ? WallpaperType.Video : WallpaperType.Image;
+        var type = VideoExtensions.Contains(extension) ? WallpaperType.Video
+            : HtmlExtensions.Contains(extension) ? WallpaperType.Html
+            : WallpaperType.Image;
         return new WallpaperItem
         {
             Title = Path.GetFileNameWithoutExtension(path),
@@ -21,7 +24,12 @@ public sealed class WallpaperImportService
             // Cards must never decode the original full-resolution file; the thumbnail service fills this in.
             PreviewPath = string.Empty,
             Type = type,
-            DurationLabel = type == WallpaperType.Video ? "LOCAL VIDEO" : "LOCAL IMAGE"
+            DurationLabel = type switch
+            {
+                WallpaperType.Video => "LOCAL VIDEO",
+                WallpaperType.Html => "LOCAL HTML • WEBVIEW2",
+                _ => "LOCAL IMAGE"
+            }
         };
     }
 
@@ -35,7 +43,12 @@ public sealed class WallpaperImportService
             FilePath = item.FilePath,
             PreviewPath = string.Empty,
             Type = item.Type,
-            DurationLabel = item.Type == WallpaperType.Video ? "BUNDLED LIVE" : "BUNDLED IMAGE"
+            DurationLabel = item.Type switch
+            {
+                WallpaperType.Video => "BUNDLED LIVE",
+                WallpaperType.Html => "BUNDLED HTML",
+                _ => "BUNDLED IMAGE"
+            }
         };
     }
 
@@ -58,6 +71,6 @@ public sealed class WallpaperImportService
     public bool IsSupported(string path)
     {
         var extension = Path.GetExtension(path).ToLowerInvariant();
-        return ImageExtensions.Contains(extension) || VideoExtensions.Contains(extension);
+        return ImageExtensions.Contains(extension) || VideoExtensions.Contains(extension) || HtmlExtensions.Contains(extension);
     }
 }
