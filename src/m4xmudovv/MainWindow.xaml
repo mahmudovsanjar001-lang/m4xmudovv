@@ -6,7 +6,7 @@
         mc:Ignorable="d"
         FontFamily="Segoe UI" Foreground="{DynamicResource PrimaryBrush}" Title="m4xmudovv" Width="1440" Height="900" MinWidth="1120" MinHeight="680"
         WindowStartupLocation="CenterScreen" Background="{DynamicResource CanvasBrush}"
-        WindowStyle="None" ResizeMode="CanResize">
+        WindowStyle="None" ResizeMode="CanResize" Background="Transparent">
     <Window.Resources>
         <DataTemplate x:Key="WallpaperCardTemplate">
             <Border Width="228" Height="176" Margin="0,0,12,12" Background="{DynamicResource Bg_111318}" BorderThickness="1" CornerRadius="10"
@@ -106,7 +106,7 @@
             </Border>
         </DataTemplate>
     </Window.Resources>
-    <Border BorderThickness="0" CornerRadius="14" Background="{DynamicResource CanvasBrush}">
+    <Border x:Name="WindowSurface" BorderThickness="0" CornerRadius="14" Background="{DynamicResource CanvasBrush}">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="210" />
@@ -510,7 +510,7 @@
                     </Border>
                     </Grid>
                     <Grid x:Name="PlaylistDetailView" Visibility="Collapsed">
-                        <ScrollViewer x:Name="PlaylistDetailScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="Library_OnScrollChanged">
+                        <ScrollViewer x:Name="PlaylistDetailScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" ScrollChanged="Library_OnScrollChanged" AllowDrop="True" PreviewMouseLeftButtonDown="PlaylistItem_OnPreviewMouseLeftButtonDown" PreviewMouseMove="PlaylistItem_OnPreviewMouseMove" DragOver="PlaylistItem_OnDragOver" Drop="PlaylistItem_OnDrop">
                             <ItemsControl x:Name="PlaylistWallpaperItems" ItemTemplate="{StaticResource WallpaperCardTemplate}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>

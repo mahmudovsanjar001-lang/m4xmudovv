@@ -74,6 +74,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         SettingsPage.DataContext = _settingsVm;
         AboutPage.DataContext = _settingsVm;
+        SourceInitialized += (_, _) => GlassEffectService.Apply(this, WindowSurface, _settings.GlassEffectEnabled);
+        Loaded += (_, _) => GlassEffectService.Apply(this, WindowSurface, _settings.GlassEffectEnabled);
         AppLog.Info($"m4xmudovv started (pid {Environment.ProcessId}). Log file: {AppLog.LogPath}");
         RestoreWindowBounds();
 
@@ -929,9 +931,10 @@ public partial class MainWindow : Window
                 break;
             case nameof(AppSettings.Theme):
                 _themeService.Apply(_settings.Theme);
+                GlassEffectService.Apply(this, WindowSurface, _settings.GlassEffectEnabled);
                 break;
             case nameof(AppSettings.GlassEffectEnabled):
-                Opacity = _settings.GlassEffectEnabled ? 0.96 : 1.0;
+                GlassEffectService.Apply(this, WindowSurface, _settings.GlassEffectEnabled);
                 break;
             case nameof(AppSettings.DefaultVolume):
                 _syncing = true;

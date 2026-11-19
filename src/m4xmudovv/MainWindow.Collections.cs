@@ -28,6 +28,8 @@ public partial class MainWindow
     private AppPage _page = AppPage.Wallpapers;
     private Playlist? _openPlaylist;
     private bool _favoritesDirty = true;   // _favorites must be rebuilt before it is shown
+    private WallpaperItem? _draggedPlaylistItem;
+    private Point _playlistDragStart;
 
     private static Visibility Vis(bool visible) => visible ? Visibility.Visible : Visibility.Collapsed;
     private static string Plural(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
@@ -106,6 +108,13 @@ public partial class MainWindow
         {
             if (string.IsNullOrWhiteSpace(playlist.Name)) continue;
             playlist.Items = playlist.Items.Distinct(StringComparer.OrdinalIgnoreCase).ToList();   // never keep duplicates
+            if (_settings.PlaylistOrders.TryGetValue(playlist.Id, out var savedOrder) && savedOrder.Count > 0)
+            {
+                var current = playlist.Items.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var ordered = savedOrder.Where(current.Contains).ToList();
+                ordered.AddRange(playlist.Items.Where(path => !savedOrder.Contains(path, StringComparer.OrdinalIgnoreCase)));
+                playlist.Items = ordered;
+            }
             _playlists.Add(playlist);
         }
     }
@@ -207,6 +216,16 @@ public partial class MainWindow
         menu.Items.Add(NewMenuItem(item.IsFavorite ? "Remove from Favorites" : "Add to Favorites",
                                    item.IsFavorite ? "\uEB52" : "\uEB51", () => ToggleFavorite(item)));
         menu.Items.Add(NewMenuItem("Add to Playlist", "\uE710", () => AddToPlaylist(item)));
+        if (_openPlaylist?.Contains(item.FilePath) == true)
+        {
+            var index = _openPlaylist.Items.FindIndex(path => SamePath(path, item.FilePath));
+            var up = NewMenuItem("Move Up", "\uE74A", () => MovePlaylistItem(item, -1));
+            var down = NewMenuItem("Move Down", "\uE74B", () => MovePlaylistItem(item, 1));
+            up.IsEnabled = index > 0;
+            down.IsEnabled = index >= 0 && index < _openPlaylist.Items.Count - 1;
+            menu.Items.Add(up);
+            menu.Items.Add(down);
+        }
         menu.Items.Add(NewMenuItem("Delete", "\uE74D", () => DeleteWallpaper(item), danger: true));
         menu.IsOpen = true;
     }
@@ -410,6 +429,84 @@ public partial class MainWindow
         foreach (var path in _openPlaylist.Items)
             if (byPath.TryGetValue(path, out var wallpaper)) _playlistWallpapers.Add(wallpaper);
         if (!ReferenceEquals(PlaylistWallpaperItems.ItemsSource, _playlistWallpapers)) PlaylistWallpaperItems.ItemsSource = _playlistWallpapers;
+    }
+
+    private void MovePlaylistItem(WallpaperItem item, int offset)
+    {
+        if (_openPlaylist is null) return;
+        var from = _openPlaylist.Items.FindIndex(path => SamePath(path, item.FilePath));
+        var to = from + offset;
+        if (from < 0 || to < 0 || to >= _openPlaylist.Items.Count) return;
+        (_openPlaylist.Items[from], _openPlaylist.Items[to]) = (_openPlaylist.Items[to], _openPlaylist.Items[from]);
+        _openPlaylist.RaiseContentChanged();
+        SavePlaylistOrder(_openPlaylist);
+        SaveLibrary();
+        RebuildOpenPlaylist();
+        StatusText.Text = $"Moved “{item.Title}” { (offset < 0 ? "up" : "down") }";
+    }
+
+    private static T? FindDataContext<T>(DependencyObject? source) where T : class
+    {
+        while (source is not null)
+        {
+            if (source is FrameworkElement element && element.DataContext is T value) return value;
+            source = VisualTreeHelper.GetParent(source);
+        }
+        return null;
+    }
+
+    private void PlaylistItem_OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_openPlaylist is null) return;
+        var item = FindDataContext<WallpaperItem>(e.OriginalSource as DependencyObject);
+        if (item is null || !_openPlaylist.Contains(item.FilePath)) return;
+        _draggedPlaylistItem = item;
+        _playlistDragStart = e.GetPosition(PlaylistDetailScroll);
+    }
+
+    private void PlaylistItem_OnPreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_draggedPlaylistItem is null || e.LeftButton != MouseButtonState.Pressed) return;
+        var current = e.GetPosition(PlaylistDetailScroll);
+        if (Math.Abs(current.X - _playlistDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(current.Y - _playlistDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        var dragged = _draggedPlaylistItem;
+        _draggedPlaylistItem = null;
+        DragDrop.DoDragDrop(PlaylistDetailScroll, new DataObject(typeof(WallpaperItem), dragged), DragDropEffects.Move);
+    }
+
+    private void PlaylistItem_OnDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = FindDataContext<WallpaperItem>(e.OriginalSource as DependencyObject) is not null
+            ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void PlaylistItem_OnDrop(object sender, DragEventArgs e)
+    {
+        if (_openPlaylist is null || !e.Data.GetDataPresent(typeof(WallpaperItem))) return;
+        var source = e.Data.GetData(typeof(WallpaperItem)) as WallpaperItem;
+        var target = FindDataContext<WallpaperItem>(e.OriginalSource as DependencyObject);
+        if (source is null || target is null || SamePath(source.FilePath, target.FilePath)) return;
+        var from = _openPlaylist.Items.FindIndex(path => SamePath(path, source.FilePath));
+        var to = _openPlaylist.Items.FindIndex(path => SamePath(path, target.FilePath));
+        if (from < 0 || to < 0) return;
+        var path = _openPlaylist.Items[from];
+        _openPlaylist.Items.RemoveAt(from);
+        if (from < to) to--;
+        _openPlaylist.Items.Insert(to, path);
+        _openPlaylist.RaiseContentChanged();
+        SavePlaylistOrder(_openPlaylist);
+        SaveLibrary();
+        RebuildOpenPlaylist();
+        StatusText.Text = $"Moved “{source.Title}” in the playlist";
+        e.Handled = true;
+    }
+
+    private void SavePlaylistOrder(Playlist playlist)
+    {
+        _settings.PlaylistOrders[playlist.Id] = playlist.Items.ToList();
+        _settingsService.ScheduleSave();
     }
 
     private void UpdatePlaylistCovers()

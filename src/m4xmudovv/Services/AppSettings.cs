@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace m4xmudovv.Services;
 
 public enum AppTheme { System, Dark, Light }
@@ -66,6 +68,7 @@ public sealed class AppSettings
     public int PlaylistIntervalMinutes { get; set; } = 15;
     public string? ActivePlaylistId { get; set; }
     public int PlaylistIndex { get; set; }
+    public Dictionary<string, List<string>> PlaylistOrders { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     // ---- Gaming ----
     public bool GamingModeEnabled { get; set; }
@@ -89,6 +92,7 @@ public sealed class AppSettings
         LastAppliedFitMode = LastAppliedFitMode is "Fit" or "Stretch" or "Center" or "Span" ? LastAppliedFitMode : "Fill";
         PlaylistIntervalMinutes = PlaylistIntervalMinutes is 5 or 15 or 30 or 60 ? PlaylistIntervalMinutes : 15;
         PlaylistIndex = Math.Max(0, PlaylistIndex);
+        PlaylistOrders ??= new(StringComparer.OrdinalIgnoreCase);
         LastAppliedSpeed = double.IsNaN(LastAppliedSpeed) ? 1.0 : Math.Clamp(LastAppliedSpeed, 0.25, 4);
         UpdateFeedUrl ??= string.Empty;
     }
