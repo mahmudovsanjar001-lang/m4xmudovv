@@ -88,6 +88,7 @@ internal static class DesktopWallpaperApi
         WallpaperFitMode.Fit => Position.Fit,
         WallpaperFitMode.Stretch => Position.Stretch,
         WallpaperFitMode.Center => Position.Center,
+        WallpaperFitMode.Span => Position.Span,
         _ => Position.Fill
     };
 
@@ -204,6 +205,7 @@ internal static class DesktopWallpaperApi
             WallpaperFitMode.Fit => ("6", "0"),
             WallpaperFitMode.Stretch => ("2", "0"),
             WallpaperFitMode.Center => ("0", "0"),   // WallpaperStyle 0 + TileWallpaper 0 = centred
+            WallpaperFitMode.Span => ("22", "0"),
             _ => ("10", "0")
         };
         using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", writable: true))

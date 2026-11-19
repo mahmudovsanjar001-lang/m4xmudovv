@@ -154,6 +154,12 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    public bool GlassEffectEnabled
+    {
+        get => _settings.GlassEffectEnabled;
+        set => Commit(nameof(AppSettings.GlassEffectEnabled), () => _settings.GlassEffectEnabled = value, nameof(GlassEffectEnabled));
+    }
+
     // ---------------- Playback ----------------
     public double DefaultVolumePercent
     {
@@ -200,6 +206,42 @@ public sealed class SettingsViewModel : ObservableObject
     {
         get => _settings.LoopVideoPreviews;
         set => Commit(nameof(AppSettings.LoopVideoPreviews), () => _settings.LoopVideoPreviews = value, nameof(LoopVideoPreviews));
+    }
+
+    public bool PlaylistEnabled
+    {
+        get => _settings.PlaylistEnabled;
+        set => Commit(nameof(AppSettings.PlaylistEnabled), () => _settings.PlaylistEnabled = value, nameof(PlaylistEnabled));
+    }
+
+    public bool PlaylistPaused
+    {
+        get => _settings.PlaylistPaused;
+        set => Commit(nameof(AppSettings.PlaylistPaused), () => _settings.PlaylistPaused = value, nameof(PlaylistPaused));
+    }
+
+    public bool PlaylistShuffle
+    {
+        get => _settings.PlaylistShuffle;
+        set => Commit(nameof(AppSettings.PlaylistShuffle), () => _settings.PlaylistShuffle = value, nameof(PlaylistShuffle));
+    }
+
+    public int PlaylistIntervalMinutes
+    {
+        get => _settings.PlaylistIntervalMinutes;
+        set => Commit(nameof(AppSettings.PlaylistIntervalMinutes), () => _settings.PlaylistIntervalMinutes = value is 5 or 15 or 30 or 60 ? value : 15, nameof(PlaylistIntervalMinutes));
+    }
+
+    public bool GamingModeEnabled
+    {
+        get => _settings.GamingModeEnabled;
+        set => Commit(nameof(AppSettings.GamingModeEnabled), () => _settings.GamingModeEnabled = value, nameof(GamingModeEnabled));
+    }
+
+    public bool GamingModeRestoreWallpaper
+    {
+        get => _settings.GamingModeRestoreWallpaper;
+        set => Commit(nameof(AppSettings.GamingModeRestoreWallpaper), () => _settings.GamingModeRestoreWallpaper = value, nameof(GamingModeRestoreWallpaper));
     }
 
     // ---------------- Library ----------------

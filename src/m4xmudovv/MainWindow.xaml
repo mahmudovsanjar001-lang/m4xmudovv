@@ -380,6 +380,7 @@
                                     <ComboBoxItem Content="Fit" Tag="Fit" />
                                     <ComboBoxItem Content="Stretch" Tag="Stretch" />
                                     <ComboBoxItem Content="Center" Tag="Center" />
+                                    <ComboBoxItem Content="Span across monitors" Tag="Span" />
                                 </ComboBox>
                             </Grid>
 
@@ -620,6 +621,12 @@
                                 </StackPanel>
                                 <ToggleButton Grid.Column="1" Style="{StaticResource SwitchToggle}" VerticalAlignment="Center" AutomationProperties.Name="Apply wallpaper to lock screen" IsChecked="{Binding ApplyToLockScreen, Mode=TwoWay}" />
                             </Grid>
+                            <Border Style="{StaticResource SettingsDivider}" />
+                            <Grid Margin="20,14">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,24,0"><TextBlock Style="{StaticResource SettingsTitle}" Text="Glass effect" /><TextBlock Style="{StaticResource SettingsDesc}" Text="Use a subtle translucent glass style without restarting the app." TextWrapping="Wrap" /></StackPanel>
+                                <ToggleButton Grid.Column="1" Style="{StaticResource SwitchToggle}" VerticalAlignment="Center" AutomationProperties.Name="Glass effect" IsChecked="{Binding GlassEffectEnabled, Mode=TwoWay}" />
+                            </Grid>
                         </StackPanel>
                     </Border>
                     <TextBlock Style="{StaticResource SettingsSectionTitle}" Text="Performance" />
@@ -707,6 +714,22 @@
                                     <ComboBoxItem Content="Light" />
                                 </ComboBox>
                             </Grid>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Style="{StaticResource SettingsSectionTitle}" Text="Automation" />
+                    <Border Style="{StaticResource SettingsCard}">
+                        <StackPanel>
+                            <Grid Margin="20,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel Margin="0,0,24,0"><TextBlock Style="{StaticResource SettingsTitle}" Text="Automatic playlist" /><TextBlock Style="{StaticResource SettingsDesc}" Text="Rotate wallpapers from the first playlist automatically." TextWrapping="Wrap" /></StackPanel><ToggleButton Grid.Column="1" Style="{StaticResource SwitchToggle}" VerticalAlignment="Center" IsChecked="{Binding PlaylistEnabled, Mode=TwoWay}" /></Grid>
+                            <Border Style="{StaticResource SettingsDivider}" />
+                            <Grid Margin="20,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel Margin="0,0,24,0"><TextBlock Style="{StaticResource SettingsTitle}" Text="Playlist interval" /><TextBlock Style="{StaticResource SettingsDesc}" Text="Choose how often the next wallpaper is applied." /></StackPanel><ComboBox Grid.Column="1" Width="120" Height="38" SelectedValuePath="Tag" SelectedValue="{Binding PlaylistIntervalMinutes, Mode=TwoWay}"><ComboBoxItem Content="5 minutes" Tag="5" /><ComboBoxItem Content="15 minutes" Tag="15" /><ComboBoxItem Content="30 minutes" Tag="30" /><ComboBoxItem Content="1 hour" Tag="60" /></ComboBox></Grid>
+                            <Border Style="{StaticResource SettingsDivider}" />
+                            <Grid Margin="20,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel Margin="0,0,24,0"><TextBlock Style="{StaticResource SettingsTitle}" Text="Shuffle playlist" /><TextBlock Style="{StaticResource SettingsDesc}" Text="Choose a random wallpaper instead of following the saved order." /></StackPanel><ToggleButton Grid.Column="1" Style="{StaticResource SwitchToggle}" VerticalAlignment="Center" IsChecked="{Binding PlaylistShuffle, Mode=TwoWay}" /></Grid>
+                            <Border Style="{StaticResource SettingsDivider}" />
+                            <Grid Margin="20,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel Margin="0,0,24,0"><TextBlock Style="{StaticResource SettingsTitle}" Text="Pause playlist" /><TextBlock Style="{StaticResource SettingsDesc}" Text="Pause or resume automatic wallpaper changes without deleting the playlist." /></StackPanel><ToggleButton Grid.Column="1" Style="{StaticResource SwitchToggle}" VerticalAlignment="Center" IsChecked="{Binding PlaylistPaused, Mode=TwoWay}" /></Grid>
+                            <Border Style="{StaticResource SettingsDivider}" />
+                            <Grid Margin="20,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel Margin="0,0,24,0"><TextBlock Style="{StaticResource SettingsTitle}" Text="Gaming mode" /><TextBlock Style="{StaticResource SettingsDesc}" Text="Pause wallpaper playback while a fullscreen game is active." TextWrapping="Wrap" /></StackPanel><ToggleButton Grid.Column="1" Style="{StaticResource SwitchToggle}" VerticalAlignment="Center" IsChecked="{Binding GamingModeEnabled, Mode=TwoWay}" /></Grid>
+                            <Border Style="{StaticResource SettingsDivider}" />
+                            <Grid Margin="20,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><StackPanel Margin="0,0,24,0"><TextBlock Style="{StaticResource SettingsTitle}" Text="Restore after gaming" /><TextBlock Style="{StaticResource SettingsDesc}" Text="Restore the last applied wallpaper when the game closes." /></StackPanel><ToggleButton Grid.Column="1" Style="{StaticResource SwitchToggle}" VerticalAlignment="Center" IsChecked="{Binding GamingModeRestoreWallpaper, Mode=TwoWay}" /></Grid>
                         </StackPanel>
                     </Border>
                     <TextBlock Style="{StaticResource SettingsSectionTitle}" Text="Playback" />

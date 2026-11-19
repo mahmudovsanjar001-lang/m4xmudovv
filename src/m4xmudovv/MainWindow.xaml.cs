@@ -43,6 +43,9 @@ public partial class MainWindow : Window
     private readonly SettingsViewModel _settingsVm;
     private readonly TrayService _tray = new();
     private readonly DispatcherTimer _idleTimer;
+    private readonly DispatcherTimer _playlistTimer;
+    private readonly DispatcherTimer _gamingTimer;
+    private readonly GamingModeService _gamingMode = new();
     private readonly HashSet<string> _suspendReasons = new();   // why the details preview is currently paused
     private LibraryCategory _category = LibraryCategory.All;
     private bool _syncing = true;            // true while defaults are pushed into controls: do not write them back to settings
@@ -56,6 +59,7 @@ public partial class MainWindow : Window
     private TimeSpan? _pendingSeek;          // position to return to after the preview was reloaded
     private readonly bool _startedFromWindows;
     private bool _restoredAppliedWallpaper;
+    private bool _gamingWasActive;
 
     public MainWindow(SettingsService settingsService, ThemeService themeService, bool startedFromWindows = false)
     {
@@ -81,6 +85,10 @@ public partial class MainWindow : Window
         _hoverDelayTimer.Tick += HoverDelayTimer_OnTick;
         _idleTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(60) };
         _idleTimer.Tick += (_, _) => EnterIdleMode();
+        _playlistTimer = new DispatcherTimer();
+        _playlistTimer.Tick += async (_, _) => await AdvancePlaylistAsync();
+        _gamingTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _gamingTimer.Tick += async (_, _) => await UpdateGamingModeAsync();
 
         // Video wallpaper windows are extra top-level windows; the app must still exit when the main window closes.
         Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
@@ -112,6 +120,7 @@ public partial class MainWindow : Window
         UpdateTrayVisibility();
         _syncing = false;
         UpdateBackgroundState();
+        UpdateAutomationTimers();
         Loaded += MainWindow_OnLoaded;
     }
 
@@ -832,6 +841,65 @@ public partial class MainWindow : Window
     //  Applying settings
     // ======================================================================================
 
+    private void UpdateAutomationTimers()
+    {
+        if (_settings.PlaylistEnabled && !_settings.PlaylistPaused && _playlists.Any(p => p.Items.Count > 0))
+        {
+            _playlistTimer.Interval = TimeSpan.FromMinutes(_settings.PlaylistIntervalMinutes);
+            if (!_playlistTimer.IsEnabled) _playlistTimer.Start();
+        }
+        else _playlistTimer.Stop();
+
+        if (_settings.GamingModeEnabled) _gamingTimer.Start();
+        else
+        {
+            _gamingTimer.Stop();
+            _gamingWasActive = false;
+        }
+    }
+
+    private async Task AdvancePlaylistAsync()
+    {
+        if (!_settings.PlaylistEnabled || _settings.PlaylistPaused || _gamingWasActive) return;
+        var playlist = _playlists.FirstOrDefault(p => p.Id == _settings.ActivePlaylistId) ?? _playlists.FirstOrDefault(p => p.Items.Count > 0);
+        if (playlist is null) return;
+        var available = playlist.Items.Select(path => _wallpapers.FirstOrDefault(item => string.Equals(item.FilePath, path, StringComparison.OrdinalIgnoreCase)))
+            .Where(item => item is not null && File.Exists(item.FilePath)).Cast<WallpaperItem>().ToList();
+        if (available.Count == 0) return;
+        WallpaperItem next;
+        if (_settings.PlaylistShuffle)
+        {
+            next = available[Random.Shared.Next(available.Count)];
+        }
+        else
+        {
+            _settings.PlaylistIndex %= available.Count;
+            next = available[_settings.PlaylistIndex++];
+        }
+        _settings.ActivePlaylistId = playlist.Id;
+        _settingsService.ScheduleSave();
+        SelectWallpaper(next, autoPlay: false);
+        await ApplyWallpaperAsync(next, GetApplyOptions(), showFailureDialog: false, applyLockScreen: false);
+    }
+
+    private async Task UpdateGamingModeAsync()
+    {
+        var active = _gamingMode.IsFullscreenGameActive();
+        if (active == _gamingWasActive) return;
+        _gamingWasActive = active;
+        if (active)
+        {
+            AppLog.Info("Gaming mode: fullscreen application detected; pausing wallpaper playback.");
+            await _wallpaperHost.PauseAsync();
+            StatusText.Text = "Gaming mode: wallpaper playback paused";
+        }
+        else if (_settings.GamingModeRestoreWallpaper && _selectedWallpaper is not null)
+        {
+            AppLog.Info("Gaming mode: fullscreen application closed; restoring wallpaper.");
+            await ApplyWallpaperAsync(_selectedWallpaper, GetApplyOptions(), showFailureDialog: false, applyLockScreen: false);
+        }
+    }
+
     /// <summary>Called whenever a setting changes on the Settings page; applies it immediately.</summary>
     private void OnSettingChanged(string name)
     {
@@ -849,11 +917,21 @@ public partial class MainWindow : Window
             case nameof(AppSettings.ReduceBackgroundActivityWhenIdle):
                 UpdateBackgroundState();
                 break;
+            case nameof(AppSettings.PlaylistEnabled):
+            case nameof(AppSettings.PlaylistPaused):
+            case nameof(AppSettings.PlaylistShuffle):
+            case nameof(AppSettings.PlaylistIntervalMinutes):
+            case nameof(AppSettings.GamingModeEnabled):
+                UpdateAutomationTimers();
+                break;
             case nameof(AppSettings.HoverPreviewEnabled):
                 if (!_settings.HoverPreviewEnabled) StopHoverPreview();
                 break;
             case nameof(AppSettings.Theme):
                 _themeService.Apply(_settings.Theme);
+                break;
+            case nameof(AppSettings.GlassEffectEnabled):
+                Opacity = _settings.GlassEffectEnabled ? 0.96 : 1.0;
                 break;
             case nameof(AppSettings.DefaultVolume):
                 _syncing = true;

@@ -1,12 +1,13 @@
 namespace m4xmudovv.Services;
 
-/// <summary>How a wallpaper is fitted to a monitor. Matches the "Fit mode" dropdown (Fill / Fit / Stretch / Center).</summary>
+/// <summary>How a wallpaper is fitted to a monitor or virtual desktop.</summary>
 public enum WallpaperFitMode
 {
     Fill,     // scale to cover the monitor, cropping the overflow
     Fit,      // scale to fit inside the monitor, letterboxing
     Stretch,  // stretch to the monitor, ignoring the aspect ratio
-    Center    // original size (1:1 pixels), centred on the monitor
+    Center,   // original size (1:1 pixels), centred on the monitor
+    Span      // one continuous image across all monitors
 }
 
 /// <param name="FitMode">Selected fit mode.</param>
@@ -22,6 +23,7 @@ public sealed record WallpaperApplyOptions(
         "Fit" => WallpaperFitMode.Fit,
         "Stretch" => WallpaperFitMode.Stretch,
         "Center" => WallpaperFitMode.Center,
+        "Span" => WallpaperFitMode.Span,
         _ => WallpaperFitMode.Fill
     };
 }

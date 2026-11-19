@@ -271,6 +271,13 @@ internal sealed class VideoWallpaperWindow : Window
                 _player.AspectRatio = null;
                 _player.Scale = 1.0f;
                 break;
+            case WallpaperFitMode.Span:
+                // Native LibVLC windows are monitor-local; Span is implemented by the Windows
+                // static wallpaper API. Keep video playback safe by using a monitor-filled frame.
+                _player.CropGeometry = ratio;
+                _player.AspectRatio = null;
+                _player.Scale = 0;
+                break;
         }
     }
 

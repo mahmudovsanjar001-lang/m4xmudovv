@@ -56,3 +56,32 @@ Filename: "{app}\{#AppExe}"; Description: "Launch {#AppName}"; Flags: nowait pos
 [UninstallRun]
 ; Remove the "Start with Windows" entry the app wrote for the current user.
 Filename: "{cmd}"; Parameters: "/C reg delete ""HKCU\Software\Microsoft\Windows\CurrentVersion\Run"" /v m4xmudovv /f"; Flags: runhidden; RunOnceId: "RemoveStartup"
+
+[Code]
+function InitializeSetup(): Boolean;
+var
+  UninstallKey: String;
+  OldUninstaller: String;
+  ResultCode: Integer;
+begin
+  Result := True;
+  UninstallKey := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{6B0E5C1A-4D52-4C7B-9C0F-3A8E2D14B7F1}_is1';
+  if RegQueryStringValue(HKCU, UninstallKey, 'UninstallString', OldUninstaller) or
+     RegQueryStringValue(HKLM, UninstallKey, 'UninstallString', OldUninstaller) then
+  begin
+    if MsgBox('An older m4xmudovv version is already installed.' + #13#10 + #13#10 +
+              'Choose Yes to remove the old version and continue. Your wallpaper library and settings will be preserved.' + #13#10 +
+              'Choose No to keep the old version and cancel this installation.',
+              mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      OldUninstaller := RemoveQuotes(OldUninstaller);
+      if not Exec(OldUninstaller, '/SILENT /NORESTART', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      begin
+        MsgBox('The older version could not be removed. Installation was cancelled.', mbError, MB_OK);
+        Result := False;
+      end;
+    end
+    else
+      Result := False;
+  end;
+end;

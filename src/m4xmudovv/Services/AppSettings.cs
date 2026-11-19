@@ -33,6 +33,7 @@ public sealed class AppSettings
     public bool MutePreviewsByDefault { get; set; }
     public bool DesktopWallpaperSoundEnabled { get; set; } = true;
     public bool ApplyToLockScreen { get; set; }
+    public bool GlassEffectEnabled { get; set; }
 
     /// <summary>The lock screen was set through the administrator (registry) fallback and can be handed back to Windows.</summary>
     public bool LockScreenPolicyApplied { get; set; }
@@ -55,7 +56,20 @@ public sealed class AppSettings
     public string LastFitMode { get; set; } = "Fill";
     public string? LastAppliedWallpaperPath { get; set; }
     public string LastAppliedFitMode { get; set; } = "Fill";
+    public bool SpanAcrossMonitors { get; set; }
     public double LastAppliedSpeed { get; set; } = 1.0;
+
+    // ---- Automatic playlist ----
+    public bool PlaylistEnabled { get; set; }
+    public bool PlaylistPaused { get; set; }
+    public bool PlaylistShuffle { get; set; }
+    public int PlaylistIntervalMinutes { get; set; } = 15;
+    public string? ActivePlaylistId { get; set; }
+    public int PlaylistIndex { get; set; }
+
+    // ---- Gaming ----
+    public bool GamingModeEnabled { get; set; }
+    public bool GamingModeRestoreWallpaper { get; set; } = true;
 
     /// <summary>Optional https URL of a JSON update feed: {"version":"1.2.0","url":"https://..."}. Empty = no update source.</summary>
     public string UpdateFeedUrl { get; set; } = string.Empty;
@@ -71,8 +85,10 @@ public sealed class AppSettings
         if (!Enum.IsDefined(LastCategory)) LastCategory = LibraryCategory.All;
         if (WindowWidth < 0 || double.IsNaN(WindowWidth)) WindowWidth = 0;
         if (WindowHeight < 0 || double.IsNaN(WindowHeight)) WindowHeight = 0;
-        LastFitMode = LastFitMode is "Fit" or "Stretch" or "Center" ? LastFitMode : "Fill";
-        LastAppliedFitMode = LastAppliedFitMode is "Fit" or "Stretch" or "Center" ? LastAppliedFitMode : "Fill";
+        LastFitMode = LastFitMode is "Fit" or "Stretch" or "Center" or "Span" ? LastFitMode : "Fill";
+        LastAppliedFitMode = LastAppliedFitMode is "Fit" or "Stretch" or "Center" or "Span" ? LastAppliedFitMode : "Fill";
+        PlaylistIntervalMinutes = PlaylistIntervalMinutes is 5 or 15 or 30 or 60 ? PlaylistIntervalMinutes : 15;
+        PlaylistIndex = Math.Max(0, PlaylistIndex);
         LastAppliedSpeed = double.IsNaN(LastAppliedSpeed) ? 1.0 : Math.Clamp(LastAppliedSpeed, 0.25, 4);
         UpdateFeedUrl ??= string.Empty;
     }

@@ -11,6 +11,14 @@ A clean Windows 10/11 x64 WPF live wallpaper application, built from scratch wit
 - `.html` and `.htm` files can be imported as live HTML wallpapers and rendered across all monitors through WebView2.
 - HTML wallpaper playback requires the Microsoft Edge WebView2 Evergreen Runtime, which is present on most current Windows 10/11 systems.
 
+## Feature update (no version or release-link changes)
+
+- **Span mode:** choose “Span across monitors” for static image wallpapers to use Windows' native virtual-desktop span position across mixed-resolution monitor arrangements. Video and HTML wallpapers retain their existing per-monitor behavior.
+- **Automatic playlist:** enable rotation, choose 5/15/30/60 minutes, shuffle, or pause it. The settings and current index are stored in the existing settings file and the first non-empty playlist is used.
+- **Gaming mode:** detects a visible foreground window covering a monitor, pauses wallpaper playback while it is active, and restores the last applied wallpaper after it closes when enabled.
+- **Glass effect:** a lightweight immediate opacity effect can be toggled from Settings without changing the app identity or requiring a restart.
+- **Installer upgrade prompt:** the existing installer detects an older m4xmudovv installation and asks permission before silently removing only that old version. User library/settings under AppData are not removed.
+
 ## Windows installer
 
 The installer is built as a **self-contained Windows x64** application, so users do not need to install .NET or another runtime separately. The full GitHub release installer includes the bundled video wallpapers; the large media files are downloaded by GitHub Actions during the Windows build rather than committed to the source repository.
