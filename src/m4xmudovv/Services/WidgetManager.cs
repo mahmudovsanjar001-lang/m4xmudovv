@@ -54,7 +54,7 @@ internal sealed class WidgetManager : IDisposable
         if (!_definitions.TryGetValue(id, out var definition) || _windows.ContainsKey(id)) return;
         var state = GetOrCreateState(definition); state.Enabled = true;
         var window = new WidgetWindow(definition, state);
-        window.StateChanged += PersistWindow;
+        window.WidgetStateChanged += PersistWindow;
         window.HideRequested += HideWindow;
         window.RemoveRequested += RemoveWindow;
         _windows[id] = window;

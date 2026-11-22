@@ -67,7 +67,7 @@ internal sealed class WidgetWindow : Window
     }
 
     public WidgetInstanceState State => _state;
-    public event Action<WidgetWindow>? StateChanged;
+    public event Action<WidgetWindow>? WidgetStateChanged;
     public event Action<WidgetWindow>? HideRequested;
     public event Action<WidgetWindow>? RemoveRequested;
 
@@ -151,9 +151,9 @@ internal sealed class WidgetWindow : Window
             menu.Items.Add(location);
         }
         var lockItem = new MenuItem { Header = "Lock position", IsCheckable = true, IsChecked = _state.Locked };
-        lockItem.Click += (_, _) => { _state.Locked = lockItem.IsChecked; StateChanged?.Invoke(this); };
+        lockItem.Click += (_, _) => { _state.Locked = lockItem.IsChecked; WidgetStateChanged?.Invoke(this); };
         var topItem = new MenuItem { Header = "Always on top", IsCheckable = true, IsChecked = _state.AlwaysOnTop };
-        topItem.Click += (_, _) => { _state.AlwaysOnTop = topItem.IsChecked; Topmost = _state.AlwaysOnTop; StateChanged?.Invoke(this); };
+        topItem.Click += (_, _) => { _state.AlwaysOnTop = topItem.IsChecked; Topmost = _state.AlwaysOnTop; WidgetStateChanged?.Invoke(this); };
         var hide = new MenuItem { Header = "Hide" }; hide.Click += (_, _) => HideRequested?.Invoke(this);
         var remove = new MenuItem { Header = "Remove" }; remove.Click += (_, _) => RemoveRequested?.Invoke(this);
         menu.Items.Add(lockItem); menu.Items.Add(topItem); menu.Items.Add(hide); menu.Items.Add(remove); return menu;
@@ -170,7 +170,7 @@ internal sealed class WidgetWindow : Window
         if (string.IsNullOrWhiteSpace(chosen)) return;
         var parts = chosen.Split(',', StringSplitOptions.TrimEntries);
         _state.Options["Location"] = $"{double.Parse(parts[0], CultureInfo.InvariantCulture):0.####}, {double.Parse(parts[1], CultureInfo.InvariantCulture):0.####}";
-        StateChanged?.Invoke(this); Refresh();
+        WidgetStateChanged?.Invoke(this); Refresh();
     }
 
     private async Task RefreshWeatherAsync(string location)
@@ -223,7 +223,7 @@ internal sealed class WidgetWindow : Window
         var centerX = Left + Width / 2; var centerY = Top + Height / 2;
         var monitor = DesktopWallpaperApi.GetMonitors().FirstOrDefault(item => centerX >= item.Left && centerX < item.Right && centerY >= item.Top && centerY < item.Bottom);
         if (monitor is not null) _state.MonitorId = monitor.Id;
-        StateChanged?.Invoke(this);
+        WidgetStateChanged?.Invoke(this);
     }
 
     private void RestoreMonitorPlacement()
