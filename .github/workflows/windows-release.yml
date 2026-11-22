@@ -72,3 +72,11 @@ jobs:
 
             The installer is self-contained: users do not need to install .NET separately.
             Wallpapers are imported from the user's own image/video files after installation.
+
+            What's new in v3.3.0:
+            - Desktop Widgets sidebar and five built-in widgets.
+            - Persistent widget positions, sizes, lock state, and multi-monitor placement.
+            - Secure ZIP widget import with archive and path safety validation.
+            - Isolated local HTML widgets through WebView2.
+            - Gaming Mode widget hide/restore integration.
+            - Real Open-Meteo weather data after location configuration.
