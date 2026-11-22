@@ -46,6 +46,8 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _playlistTimer;
     private readonly DispatcherTimer _gamingTimer;
     private readonly GamingModeService _gamingMode = new();
+    private readonly WidgetCatalogService _widgetCatalog;
+    private readonly WidgetManager _widgetManager;
     private readonly HashSet<string> _suspendReasons = new();   // why the details preview is currently paused
     private LibraryCategory _category = LibraryCategory.All;
     private bool _syncing = true;            // true while defaults are pushed into controls: do not write them back to settings
@@ -68,6 +70,8 @@ public partial class MainWindow : Window
         _settings = settingsService.Settings;
         _themeService = themeService;
         _startedFromWindows = startedFromWindows;
+        _widgetCatalog = new WidgetCatalogService();
+        _widgetManager = new WidgetManager(_settings, _settingsService, _widgetCatalog);
         _thumbnailService.Quality = _settings.ThumbnailQuality;
         _settingsVm = new SettingsViewModel(_settings, _settingsService, _thumbnailService, GetLibraryStats);
 
@@ -124,6 +128,7 @@ public partial class MainWindow : Window
         UpdateBackgroundState();
         UpdateAutomationTimers();
         Loaded += MainWindow_OnLoaded;
+        RefreshWidgetCatalog();
     }
 
     private void LoadLibrary()
@@ -196,7 +201,12 @@ public partial class MainWindow : Window
     private async void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= MainWindow_OnLoaded;
-        if (_wallpapers.Count == 0) return;
+        _widgetManager.RestoreEnabledWidgets();
+        if (_wallpapers.Count == 0)
+        {
+            StatusText.Text = "Ready to preview";
+            return;
+        }
         var startupTimer = System.Diagnostics.Stopwatch.StartNew();
         // The desktop wallpaper comes first: it does not need thumbnails, so it must not wait for them.
         var restoreTask = RestoreLastAppliedWallpaperAsync();
@@ -925,6 +935,7 @@ public partial class MainWindow : Window
             case nameof(AppSettings.PlaylistIntervalMinutes):
             case nameof(AppSettings.GamingModeEnabled):
                 UpdateAutomationTimers();
+                _widgetManager.ConfigureGamingMode(_settings.GamingModeEnabled);
                 break;
             case nameof(AppSettings.HoverPreviewEnabled):
                 if (!_settings.HoverPreviewEnabled) StopHoverPreview();
@@ -1318,6 +1329,7 @@ public partial class MainWindow : Window
         _wallpaperHost.Shutdown();
         _tray.Dispose();
         _settingsService.Flush();
+        _widgetManager.Dispose();
     }
 
     private void SystemEvents_SessionSwitch(object? sender, SessionSwitchEventArgs e)

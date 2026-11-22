@@ -125,6 +125,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Border Grid.Row="0" Background="Transparent" Padding="12,52,0,34" MouseLeftButtonDown="TitleBar_OnMouseLeftButtonDown">
                         <TextBlock Text="M4XMUDOVV" FontSize="20" FontWeight="Bold" />
@@ -150,6 +151,14 @@
                         </Button>
                     </StackPanel>
                     <StackPanel Grid.Row="2">
+                        <Button x:Name="NavWidgetsButton" Style="{StaticResource NavButton}" Height="42" Margin="0,0,0,6" Click="NavWidgets_OnClick">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE80F;" FontFamily="{StaticResource IconFont}" FontSize="17" Width="30" VerticalAlignment="Center" />
+                                <TextBlock Text="Widgets" FontSize="14" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <StackPanel Grid.Row="3">
                         <Button x:Name="NavSettingsButton" Style="{StaticResource NavButton}" Height="42" Margin="0,0,0,6" Click="NavSettings_OnClick">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="17" Width="30" VerticalAlignment="Center" />
@@ -534,6 +543,31 @@
             <Grid x:Name="StatusBarPanel" Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Height="20" Margin="24,0,12,14" IsHitTestVisible="False">
                 <TextBlock x:Name="StatusText" Text="Ready to preview" FontSize="11" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" Margin="0,0,110,0" />
                 <TextBlock x:Name="ItemCountText" Text="0 wallpapers" FontSize="11" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right" />
+            </Grid>
+
+            <Grid x:Name="WidgetsPage" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="22,8,16,14" Visibility="Collapsed">
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <StackPanel><TextBlock Text="Widgets" FontSize="26" FontWeight="SemiBold" /><TextBlock Text="Desktop widgets float above your wallpaper and remember their position." FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" /></StackPanel>
+                    <Button Content="Import Widget ZIP" Height="40" Padding="18,0" HorizontalAlignment="Right" Click="ImportWidget_OnClick" />
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,18,0,0">
+                    <ItemsControl x:Name="WidgetItems">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="300" MinHeight="190" Margin="0,0,14,14" Padding="16" Background="{DynamicResource Bg_111318}" BorderBrush="{DynamicResource Bd_252B36}" BorderThickness="1" CornerRadius="12">
+                                    <Grid>
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                        <StackPanel><TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" /><TextBlock Text="{Binding Description}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,6,0,0" /></StackPanel>
+                                        <StackPanel Grid.Row="1" Margin="0,14,0,12"><TextBlock Text="{Binding Author}" Foreground="{DynamicResource Fg_C9D8FF}" FontSize="12" /><TextBlock Text="{Binding Version}" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,4,0,0" /><TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,4,0,0" /></StackPanel>
+                                        <StackPanel Grid.Row="2" Orientation="Horizontal"><Button Content="Open" Padding="14,6" Margin="0,0,8,0" Click="OpenWidget_OnClick" /><Button Content="Remove" Padding="14,6" Click="RemoveWidget_OnClick" /></StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
 
             <Grid x:Name="SettingsPage" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="22,8,16,14" Visibility="Collapsed">

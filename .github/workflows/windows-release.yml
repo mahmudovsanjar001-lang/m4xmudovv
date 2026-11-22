@@ -24,6 +24,10 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Run Widgets regression tests
+        shell: pwsh
+        run: python tests/widgets_review_tests.py
+
       - name: Restore
         run: dotnet restore src/m4xmudovv/m4xmudovv.csproj -r win-x64
 

@@ -20,7 +20,7 @@ namespace m4xmudovv;
 /// </summary>
 public partial class MainWindow
 {
-    private enum AppPage { Wallpapers, Favorites, Playlists, Settings, About }
+    private enum AppPage { Wallpapers, Favorites, Playlists, Widgets, Settings, About }
 
     private readonly ObservableCollection<Playlist> _playlists = new();
     private readonly ObservableCollection<WallpaperItem> _favorites = new();           // live view of IsFavorite items (library order)
@@ -48,6 +48,8 @@ public partial class MainWindow
         ShowPage(AppPage.Playlists);
     }
 
+    private void NavWidgets_OnClick(object sender, RoutedEventArgs e) => ShowPage(AppPage.Widgets);
+
     private void NavSettings_OnClick(object sender, RoutedEventArgs e) => ShowPage(AppPage.Settings);
     private void NavAbout_OnClick(object sender, RoutedEventArgs e) => ShowPage(AppPage.About);
     private void BrowseWallpapers_OnClick(object sender, RoutedEventArgs e) => ShowPage(AppPage.Wallpapers);
@@ -59,11 +61,12 @@ public partial class MainWindow
     {
         StopHoverPreview();
         _page = page;
-        var wide = page is AppPage.Settings or AppPage.About;   // these two use the full width and hide the details panel
+        var wide = page is AppPage.Widgets or AppPage.Settings or AppPage.About;
 
         LibraryPage.Visibility = Vis(page == AppPage.Wallpapers);
         FavoritesPage.Visibility = Vis(page == AppPage.Favorites);
         PlaylistsPage.Visibility = Vis(page == AppPage.Playlists);
+        WidgetsPage.Visibility = Vis(page == AppPage.Widgets);
         SettingsPage.Visibility = Vis(page == AppPage.Settings);
         AboutPage.Visibility = Vis(page == AppPage.About);
         DetailsPage.Visibility = Vis(!wide);
@@ -72,6 +75,7 @@ public partial class MainWindow
         SetActive(NavWallpapersButton, page == AppPage.Wallpapers);
         SetActive(NavFavoritesButton, page == AppPage.Favorites);
         SetActive(NavPlaylistsButton, page == AppPage.Playlists);
+        SetActive(NavWidgetsButton, page == AppPage.Widgets);
         SetActive(NavSettingsButton, page == AppPage.Settings);
         SetActive(NavAboutButton, page == AppPage.About);
 
@@ -79,9 +83,39 @@ public partial class MainWindow
         {
             case AppPage.Favorites: RefreshFavoritesView(); break;
             case AppPage.Playlists: RefreshPlaylistsView(); break;
+            case AppPage.Widgets: RefreshWidgetCatalog(); break;
             case AppPage.Settings: _settingsVm.Refresh(); break;
         }
         UpdateItemCountText();
+    }
+
+    private void RefreshWidgetCatalog() => WidgetItems.ItemsSource = _widgetManager.Definitions.OrderBy(widget => widget.BuiltIn ? 0 : 1).ThenBy(widget => widget.Name).ToList();
+
+    private void OpenWidget_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: WidgetDefinition widget }) return;
+        _widgetManager.Show(widget.Id);
+        StatusText.Text = $"Opened widget “{widget.Name}”";
+    }
+
+    private void RemoveWidget_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: WidgetDefinition widget } || widget.BuiltIn) return;
+        if (!AppDialogWindow.Confirm(this, "Remove widget?", $"Remove “{widget.Name}” and its local files?", "Remove")) return;
+        _widgetManager.Remove(widget.Id); RefreshWidgetCatalog(); StatusText.Text = $"Removed widget “{widget.Name}”";
+    }
+
+    private void ImportWidget_OnClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog { Title = "Import widget package", Filter = "Widget package (*.zip)|*.zip" };
+        if (dialog.ShowDialog(this) != true) return;
+        var result = _widgetCatalog.ImportZip(dialog.FileName);
+        if (result.Definition is null)
+        {
+            MessageBox.Show(this, result.Message, "Widget import failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        _widgetManager.RegisterImported(result.Definition); RefreshWidgetCatalog(); StatusText.Text = result.Message;
     }
 
     private void UpdateItemCountText()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using m4xmudovv.Models;
 
 namespace m4xmudovv.Services;
 
@@ -73,6 +74,7 @@ public sealed class AppSettings
     // ---- Gaming ----
     public bool GamingModeEnabled { get; set; }
     public bool GamingModeRestoreWallpaper { get; set; } = true;
+    public List<WidgetInstanceState> WidgetStates { get; set; } = new();
 
     /// <summary>Optional https URL of a JSON update feed: {"version":"1.2.0","url":"https://..."}. Empty = no update source.</summary>
     public string UpdateFeedUrl { get; set; } = string.Empty;
@@ -93,6 +95,16 @@ public sealed class AppSettings
         PlaylistIntervalMinutes = PlaylistIntervalMinutes is 5 or 15 or 30 or 60 ? PlaylistIntervalMinutes : 15;
         PlaylistIndex = Math.Max(0, PlaylistIndex);
         PlaylistOrders ??= new(StringComparer.OrdinalIgnoreCase);
+        WidgetStates ??= new();
+        WidgetStates.RemoveAll(widget => widget is null || string.IsNullOrWhiteSpace(widget.WidgetId));
+        foreach (var widget in WidgetStates)
+        {
+            widget.Left = double.IsFinite(widget.Left) ? Math.Clamp(widget.Left, -100000, 100000) : 40;
+            widget.Top = double.IsFinite(widget.Top) ? Math.Clamp(widget.Top, -100000, 100000) : 40;
+            widget.Width = Math.Clamp(widget.Width, 160, 1200);
+            widget.Height = Math.Clamp(widget.Height, 90, 900);
+            widget.Options ??= new(StringComparer.OrdinalIgnoreCase);
+        }
         LastAppliedSpeed = double.IsNaN(LastAppliedSpeed) ? 1.0 : Math.Clamp(LastAppliedSpeed, 0.25, 4);
         UpdateFeedUrl ??= string.Empty;
     }
